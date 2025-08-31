@@ -147,9 +147,6 @@ export default function JobApplicationPage() {
     // Add resume file if exists
     if (formData.resume) {
       formDataToSend.append('resume', formData.resume)
-    } else {
-      // Add empty resume field to ensure backend validation passes
-      formDataToSend.append('resume', '')
     }
 
     submitMutation.mutate(formDataToSend)
@@ -207,6 +204,7 @@ export default function JobApplicationPage() {
         ...prev,
         resume: ''
       }))
+      toast.success('Resume uploaded successfully!')
     }
   }
 
@@ -429,16 +427,16 @@ export default function JobApplicationPage() {
                 {/* Resume Upload */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Resume</CardTitle>
+                    <CardTitle>Resume (Optional)</CardTitle>
                     <CardDescription>
-                      Upload your resume (PDF or Word document, max 5MB)
+                      Upload your resume (PDF or Word document, max 5MB). This is optional but recommended.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                       <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                       <p className="text-sm text-gray-600 mb-2">
-                        {formData.resume ? formData.resume.name : 'Click to upload or drag and drop'}
+                        {formData.resume ? formData.resume.name : 'Click to upload or drag and drop (optional)'}
                       </p>
                       <input
                         type="file"
@@ -447,14 +445,26 @@ export default function JobApplicationPage() {
                         className="hidden"
                         id="resume-upload"
                       />
-                      <label htmlFor="resume-upload" className="cursor-pointer">
-                        <Button variant="outline" size="sm">
-                          Choose File
-                        </Button>
-                      </label>
-                      {errors.resume && (
-                        <p className="text-red-500 text-sm mt-2">{errors.resume}</p>
-                      )}
+                      <div className="flex space-x-2">
+                        <label htmlFor="resume-upload" className="cursor-pointer">
+                          <Button variant="outline" size="sm">
+                            {formData.resume ? 'Change File' : 'Choose File'}
+                          </Button>
+                        </label>
+                        {formData.resume && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => {
+                              setFormData(prev => ({ ...prev, resume: null }))
+                              toast.success('Resume removed')
+                            }}
+                          >
+                            Remove
+                          </Button>
+                        )}
+                      </div>
+                    </div>
                     </div>
                   </CardContent>
                 </Card>
