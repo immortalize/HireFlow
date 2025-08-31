@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useRouter } from 'next/navigation'
 import { assessmentsAPI } from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -21,6 +22,7 @@ import { formatDate } from '@/lib/utils'
 import toast from 'react-hot-toast'
 
 export default function AssessmentsPage() {
+  const router = useRouter()
   const [filters, setFilters] = useState({
     type: '',
     status: '',
@@ -212,16 +214,21 @@ export default function AssessmentsPage() {
                     <span>{assessment._count.assessmentResults} completed</span>
                   </div>
                 </div>
-                <div className="flex space-x-2 mt-4">
-                  <Button variant="outline" size="sm" className="flex-1">
-                    <Eye className="w-4 h-4 mr-1" />
-                    View
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex-1">
-                    <Clock className="w-4 h-4 mr-1" />
-                    Results
-                  </Button>
-                </div>
+                                 <div className="flex space-x-2 mt-4">
+                   <Button variant="outline" size="sm" className="flex-1">
+                     <Eye className="w-4 h-4 mr-1" />
+                     View
+                   </Button>
+                   <Button 
+                     variant="outline" 
+                     size="sm" 
+                     className="flex-1"
+                     onClick={() => router.push(`/dashboard/assessments/${assessment.id}/results`)}
+                   >
+                     <Clock className="w-4 h-4 mr-1" />
+                     Results
+                   </Button>
+                 </div>
               </CardContent>
             </Card>
           ))}

@@ -1,563 +1,200 @@
-const express = require('express');
-const { body, validationResult } = require('express-validator');
-const { PrismaClient } = require('@prisma/client');
-const { requireRole, requireCompanyAccess } = require('../middleware/auth');
+const express = require('express')
+const { PrismaClient } = require('@prisma/client')
+const { authenticateToken, requireRole } = require('../middleware/auth')
 
-const router = express.Router();
-const prisma = new PrismaClient();
+const router = express.Router()
+const prisma = new PrismaClient()
 
-// Question banks for different assessment types
-const questionBanks = {
-  COGNITIVE: [
+// Question bank for cognitive ability tests
+const COGNITIVE_QUESTIONS = {
+  logic: [
     {
-      id: 1,
-      question: "If a train travels 60 miles in 1 hour, how far will it travel in 2.5 hours?",
-      options: ["120 miles", "150 miles", "180 miles", "200 miles"],
+      id: 'logic_1',
+      text: 'If all roses are flowers and some flowers are red, which of the following must be true?',
+      options: [
+        'All roses are red',
+        'Some roses are red',
+        'All red things are roses',
+        'None of the above'
+      ],
       correctAnswer: 1,
-      category: "math"
+      category: 'logic'
     },
     {
-      id: 2,
-      question: "Which word is most similar to 'Eloquent'?",
-      options: ["Quiet", "Articulate", "Fast", "Strong"],
+      id: 'logic_2',
+      text: 'A sequence follows the pattern: 2, 6, 12, 20, 30, ? What comes next?',
+      options: ['40', '42', '44', '46'],
       correctAnswer: 1,
-      category: "verbal"
+      category: 'logic'
     },
     {
-      id: 3,
-      question: "Complete the sequence: 2, 4, 8, 16, __",
-      options: ["24", "32", "30", "28"],
-      correctAnswer: 1,
-      category: "logic"
+      id: 'logic_3',
+      text: 'If A = 1, B = 2, C = 3, then what does CAB equal?',
+      options: ['312', '321', '123', '213'],
+      correctAnswer: 0,
+      category: 'logic'
     },
     {
-      id: 4,
-      question: "If all roses are flowers and some flowers are red, then:",
-      options: ["All roses are red", "Some roses are red", "No roses are red", "Cannot determine"],
+      id: 'logic_4',
+      text: 'Which figure comes next in the sequence: Circle, Square, Triangle, Circle, Square, ?',
+      options: ['Circle', 'Square', 'Triangle', 'Rectangle'],
+      correctAnswer: 2,
+      category: 'logic'
+    },
+    {
+      id: 'logic_5',
+      text: 'If 3 workers can complete a task in 6 hours, how many hours would it take 2 workers to complete the same task?',
+      options: ['4 hours', '6 hours', '9 hours', '12 hours'],
+      correctAnswer: 2,
+      category: 'logic'
+    }
+  ],
+  math: [
+    {
+      id: 'math_1',
+      text: 'What is 15% of 200?',
+      options: ['20', '25', '30', '35'],
+      correctAnswer: 2,
+      category: 'math'
+    },
+    {
+      id: 'math_2',
+      text: 'If x + 3 = 7, what is x?',
+      options: ['3', '4', '5', '6'],
+      correctAnswer: 1,
+      category: 'math'
+    },
+    {
+      id: 'math_3',
+      text: 'What is the average of 8, 12, 16, and 20?',
+      options: ['12', '14', '16', '18'],
+      correctAnswer: 1,
+      category: 'math'
+    },
+    {
+      id: 'math_4',
+      text: 'If a rectangle has a length of 8 and width of 6, what is its area?',
+      options: ['14', '28', '48', '56'],
+      correctAnswer: 2,
+      category: 'math'
+    },
+    {
+      id: 'math_5',
+      text: 'What is 2^3 × 3^2?',
+      options: ['36', '54', '72', '108'],
+      correctAnswer: 2,
+      category: 'math'
+    }
+  ],
+  verbal: [
+    {
+      id: 'verbal_1',
+      text: 'Choose the word that best completes the analogy: Book is to Reading as Fork is to:',
+      options: ['Eating', 'Cooking', 'Kitchen', 'Food'],
+      correctAnswer: 0,
+      category: 'verbal'
+    },
+    {
+      id: 'verbal_2',
+      text: 'Which word is most similar in meaning to "Eloquent"?',
+      options: ['Quiet', 'Articulate', 'Fast', 'Loud'],
+      correctAnswer: 1,
+      category: 'verbal'
+    },
+    {
+      id: 'verbal_3',
+      text: 'Complete the sentence: "The weather was so _____ that we decided to stay indoors."',
+      options: ['pleasant', 'inclement', 'warm', 'sunny'],
+      correctAnswer: 1,
+      category: 'verbal'
+    },
+    {
+      id: 'verbal_4',
+      text: 'What is the opposite of "Benevolent"?',
+      options: ['Kind', 'Generous', 'Malevolent', 'Friendly'],
+      correctAnswer: 2,
+      category: 'verbal'
+    },
+    {
+      id: 'verbal_5',
+      text: 'Which word does not belong with the others?',
+      options: ['Apple', 'Orange', 'Banana', 'Carrot'],
       correctAnswer: 3,
-      category: "logic"
-    },
-    {
-      id: 5,
-      question: "A company's revenue increased by 20% from $100,000. What is the new revenue?",
-      options: ["$110,000", "$120,000", "$130,000", "$140,000"],
-      correctAnswer: 1,
-      category: "math"
-    }
-  ],
-  ENGLISH: [
-    {
-      id: 1,
-      question: "Choose the correct form: 'She _____ to the store yesterday.'",
-      options: ["go", "goes", "went", "gone"],
-      correctAnswer: 2,
-      category: "grammar"
-    },
-    {
-      id: 2,
-      question: "Which word is a synonym for 'Benevolent'?",
-      options: ["Kind", "Angry", "Quick", "Large"],
-      correctAnswer: 0,
-      category: "vocabulary"
-    },
-    {
-      id: 3,
-      question: "Identify the error: 'The team are working hard.'",
-      options: ["The", "team", "are", "working"],
-      correctAnswer: 2,
-      category: "grammar"
-    },
-    {
-      id: 4,
-      question: "What does 'Ubiquitous' mean?",
-      options: ["Rare", "Present everywhere", "Expensive", "Beautiful"],
-      correctAnswer: 1,
-      category: "vocabulary"
-    },
-    {
-      id: 5,
-      question: "Choose the correct preposition: 'She is responsible _____ the project.'",
-      options: ["for", "to", "with", "by"],
-      correctAnswer: 0,
-      category: "grammar"
-    }
-  ],
-  SITUATIONAL_JUDGMENT: [
-    {
-      id: 1,
-      question: "A team member consistently misses deadlines. What would you do first?",
-      options: ["Report them to HR", "Have a private conversation", "Remove them from the team", "Ignore the issue"],
-      correctAnswer: 1,
-      category: "leadership"
-    },
-    {
-      id: 2,
-      question: "You discover a mistake in your work after submitting it. What's your next step?",
-      options: ["Hope no one notices", "Immediately inform your supervisor", "Fix it secretly", "Blame someone else"],
-      correctAnswer: 1,
-      category: "integrity"
-    },
-    {
-      id: 3,
-      question: "A client is unhappy with your work. How do you respond?",
-      options: ["Defend your work", "Listen and understand their concerns", "Ignore them", "Blame the client"],
-      correctAnswer: 1,
-      category: "customer_service"
-    },
-    {
-      id: 4,
-      question: "You're overwhelmed with work. What do you do?",
-      options: ["Work overtime", "Ask for help", "Skip some tasks", "Complain to everyone"],
-      correctAnswer: 1,
-      category: "time_management"
-    },
-    {
-      id: 5,
-      question: "A colleague takes credit for your idea. How do you handle it?",
-      options: ["Confront them publicly", "Let it go", "Discuss it privately", "Retaliate"],
-      correctAnswer: 2,
-      category: "conflict_resolution"
-    }
-  ],
-  FIT_CHECK: [
-    {
-      id: 1,
-      question: "Do you have at least 2 years of experience in this field?",
-      options: ["Yes", "No"],
-      correctAnswer: 0,
-      category: "experience"
-    },
-    {
-      id: 2,
-      question: "Are you willing to work remotely?",
-      options: ["Yes", "No"],
-      correctAnswer: 0,
-      category: "flexibility"
-    },
-    {
-      id: 3,
-      question: "Can you start within 2 weeks if hired?",
-      options: ["Yes", "No"],
-      correctAnswer: 0,
-      category: "availability"
-    },
-    {
-      id: 4,
-      question: "Do you have the required technical skills?",
-      options: ["Yes", "No"],
-      correctAnswer: 0,
-      category: "skills"
-    },
-    {
-      id: 5,
-      question: "Are you comfortable with the salary range?",
-      options: ["Yes", "No"],
-      correctAnswer: 0,
-      category: "compensation"
+      category: 'verbal'
     }
   ]
-};
+}
 
-// Helper function to randomize questions
-const randomizeQuestions = (questions, count = 5) => {
-  const shuffled = [...questions].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, Math.min(count, questions.length));
-};
+// Helper function to shuffle array
+function shuffleArray(array) {
+  const shuffled = [...array]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  return shuffled
+}
 
-// Helper function to calculate score
-const calculateScore = (answers, questions) => {
-  let correct = 0;
-  let total = questions.length;
+// Helper function to select random questions
+function selectRandomQuestions(type, count = 25) {
+  const allQuestions = []
+  
+  // Add questions from each category
+  Object.values(COGNITIVE_QUESTIONS).forEach(category => {
+    allQuestions.push(...category)
+  })
+  
+  // Shuffle and select the specified number
+  const shuffled = shuffleArray(allQuestions)
+  return shuffled.slice(0, count)
+}
 
-  answers.forEach((answer, index) => {
-    if (answer.selectedAnswer === questions[index].correctAnswer) {
-      correct++;
-    }
-  });
-
-  return {
-    score: (correct / total) * 100,
-    correct,
-    total,
-    percentage: Math.round((correct / total) * 100)
-  };
-};
-
-// Create assessment for application
-router.post('/create', [
-  requireRole(['EMPLOYER', 'HR_MANAGER', 'HIRING_MANAGER']),
-  requireCompanyAccess,
-  body('applicationId').notEmpty(),
-  body('type').isIn(['COGNITIVE', 'ENGLISH', 'SITUATIONAL_JUDGMENT', 'FIT_CHECK']),
-  body('timeLimit').optional().isInt({ min: 5, max: 120 })
-], async (req, res) => {
+// Get all assessments (for employers)
+router.get('/', authenticateToken, requireRole(['EMPLOYER', 'HR_MANAGER', 'HIRING_MANAGER']), async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+    const { type, status, search } = req.query
+    const userId = req.user.id
+
+    // Get user's company
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { company: true }
+    })
+
+    if (!user.company) {
+      return res.status(400).json({ error: 'User not associated with a company' })
     }
 
-    const { applicationId, type, timeLimit } = req.body;
-
-    // Verify application exists and belongs to user's company
-    const application = await prisma.application.findFirst({
-      where: {
-        id: applicationId,
+    const whereClause = {
+      application: {
         job: {
-          companyId: req.user.companyId
+          companyId: user.company.id
         }
       }
-    });
-
-    if (!application) {
-      return res.status(404).json({ error: 'Application not found' });
     }
 
-    // Check if assessment already exists
-    const existingAssessment = await prisma.assessment.findFirst({
-      where: {
-        applicationId,
-        type,
-        isActive: true
-      }
-    });
-
-    if (existingAssessment) {
-      return res.status(400).json({ error: 'Assessment of this type already exists for this application' });
-    }
-
-    // Get questions for the type
-    const questions = questionBanks[type] || [];
-    const randomizedQuestions = randomizeQuestions(questions, type === 'FIT_CHECK' ? 5 : 10);
-
-    const assessment = await prisma.assessment.create({
-      data: {
-        type,
-        questionsBank: randomizedQuestions,
-        applicationId,
-        timeLimit: timeLimit || (type === 'FIT_CHECK' ? 10 : 30)
-      },
-      include: {
-        application: {
-          include: {
-            candidate: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                email: true
-              }
-            },
+    if (type) whereClause.type = type
+    if (status) whereClause.status = status
+    if (search) {
+      whereClause.OR = [
+        {
+          application: {
             job: {
-              select: {
-                id: true,
-                title: true,
-                company: {
-                  select: {
-                    id: true,
-                    name: true
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    });
-
-    res.status(201).json({
-      message: 'Assessment created successfully',
-      assessment
-    });
-  } catch (error) {
-    console.error('Create assessment error:', error);
-    res.status(500).json({ error: 'Failed to create assessment' });
-  }
-});
-
-// Get assessment for candidate
-router.get('/take/:assessmentId', async (req, res) => {
-  try {
-    const { assessmentId } = req.params;
-
-    const assessment = await prisma.assessment.findUnique({
-      where: { id: assessmentId },
-      include: {
-        application: {
-          include: {
-            candidate: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                email: true
-              }
-            },
-            job: {
-              select: {
-                id: true,
-                title: true,
-                company: {
-                  select: {
-                    id: true,
-                    name: true,
-                    primaryColor: true
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    });
-
-    if (!assessment || !assessment.isActive) {
-      return res.status(404).json({ error: 'Assessment not found or inactive' });
-    }
-
-    // Check if already completed
-    const existingResult = await prisma.assessmentResult.findFirst({
-      where: {
-        assessmentId,
-        candidateId: assessment.application.candidate.id
-      }
-    });
-
-    if (existingResult) {
-      return res.status(400).json({ error: 'Assessment already completed' });
-    }
-
-    // Return questions without correct answers
-    const questionsForCandidate = assessment.questionsBank.map(q => ({
-      id: q.id,
-      question: q.question,
-      options: q.options,
-      category: q.category
-    }));
-
-    res.json({
-      assessment: {
-        id: assessment.id,
-        type: assessment.type,
-        timeLimit: assessment.timeLimit,
-        questions: questionsForCandidate,
-        job: assessment.application.job,
-        candidate: assessment.application.candidate
-      }
-    });
-  } catch (error) {
-    console.error('Get assessment error:', error);
-    res.status(500).json({ error: 'Failed to fetch assessment' });
-  }
-});
-
-// Submit assessment results
-router.post('/submit/:assessmentId', [
-  body('answers').isArray(),
-  body('timeSpent').isInt({ min: 0 }),
-  body('proctoringData').optional().isObject()
-], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const { assessmentId } = req.params;
-    const { answers, timeSpent, proctoringData } = req.body;
-
-    const assessment = await prisma.assessment.findUnique({
-      where: { id: assessmentId },
-      include: {
-        application: {
-          include: {
-            candidate: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                email: true
-              }
-            }
-          }
-        }
-      }
-    });
-
-    if (!assessment || !assessment.isActive) {
-      return res.status(404).json({ error: 'Assessment not found or inactive' });
-    }
-
-    // Check if already completed
-    const existingResult = await prisma.assessmentResult.findFirst({
-      where: {
-        assessmentId,
-        candidateId: assessment.application.candidate.id
-      }
-    });
-
-    if (existingResult) {
-      return res.status(400).json({ error: 'Assessment already completed' });
-    }
-
-    // Calculate score
-    const score = calculateScore(answers, assessment.questionsBank);
-
-    // Create assessment result
-    const result = await prisma.assessmentResult.create({
-      data: {
-        assessmentId,
-        candidateId: assessment.application.candidate.id,
-        score: score.score,
-        answers,
-        proctoringData: proctoringData || {},
-        timeSpent
-      },
-      include: {
-        assessment: {
-          include: {
-            application: {
-              include: {
-                job: {
-                  select: {
-                    title: true,
-                    company: {
-                      select: {
-                        name: true
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    });
-
-    res.json({
-      message: 'Assessment submitted successfully',
-      result: {
-        id: result.id,
-        score: score.score,
-        correct: score.correct,
-        total: score.total,
-        percentage: score.percentage,
-        timeSpent
-      }
-    });
-  } catch (error) {
-    console.error('Submit assessment error:', error);
-    res.status(500).json({ error: 'Failed to submit assessment' });
-  }
-});
-
-// Get assessment results for company
-router.get('/results/:assessmentId', [
-  requireRole(['EMPLOYER', 'HR_MANAGER', 'HIRING_MANAGER']),
-  requireCompanyAccess
-], async (req, res) => {
-  try {
-    const { assessmentId } = req.params;
-
-    const assessment = await prisma.assessment.findFirst({
-      where: {
-        id: assessmentId,
-        application: {
-          job: {
-            companyId: req.user.companyId
-          }
-        }
-      },
-      include: {
-        application: {
-          include: {
-            candidate: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                email: true
-              }
-            },
-            job: {
-              select: {
-                id: true,
-                title: true
-              }
+              title: { contains: search, mode: 'insensitive' }
             }
           }
         },
-        assessmentResults: {
-          include: {
+        {
+          application: {
             candidate: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                email: true
-              }
+              OR: [
+                { firstName: { contains: search, mode: 'insensitive' } },
+                { lastName: { contains: search, mode: 'insensitive' } }
+              ]
             }
           }
         }
-      }
-    });
-
-    if (!assessment) {
-      return res.status(404).json({ error: 'Assessment not found' });
-    }
-
-    res.json({
-      assessment: {
-        id: assessment.id,
-        type: assessment.type,
-        timeLimit: assessment.timeLimit,
-        questions: assessment.questionsBank,
-        application: assessment.application,
-        results: assessment.assessmentResults
-      }
-    });
-  } catch (error) {
-    console.error('Get assessment results error:', error);
-    res.status(500).json({ error: 'Failed to fetch assessment results' });
-  }
-});
-
-// Get all assessments for company
-router.get('/', [
-  requireRole(['EMPLOYER', 'HR_MANAGER', 'HIRING_MANAGER']),
-  requireCompanyAccess
-], async (req, res) => {
-  try {
-    const { 
-      page = 1, 
-      limit = 10, 
-      type,
-      status = 'active'
-    } = req.query;
-
-    const skip = (page - 1) * limit;
-    
-    let whereClause = {
-      application: {
-        job: {
-          companyId: req.user.companyId
-        }
-      }
-    };
-
-    if (type) {
-      whereClause.type = type;
-    }
-
-    if (status === 'completed') {
-      whereClause.assessmentResults = {
-        some: {}
-      };
-    } else if (status === 'pending') {
-      whereClause.assessmentResults = {
-        none: {}
-      };
+      ]
     }
 
     const assessments = await prisma.assessment.findMany({
@@ -565,20 +202,12 @@ router.get('/', [
       include: {
         application: {
           include: {
-            candidate: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                email: true
+            job: {
+              include: {
+                company: true
               }
             },
-            job: {
-              select: {
-                id: true,
-                title: true
-              }
-            }
+            candidate: true
           }
         },
         _count: {
@@ -587,28 +216,318 @@ router.get('/', [
           }
         }
       },
-      orderBy: {
-        createdAt: 'desc'
-      },
-      skip: parseInt(skip),
-      take: parseInt(limit)
-    });
+      orderBy: { createdAt: 'desc' }
+    })
 
-    const totalAssessments = await prisma.assessment.count({ where: whereClause });
-
-    res.json({
-      assessments,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total: totalAssessments,
-        pages: Math.ceil(totalAssessments / limit)
-      }
-    });
+    res.json({ assessments })
   } catch (error) {
-    console.error('Get assessments error:', error);
-    res.status(500).json({ error: 'Failed to fetch assessments' });
+    console.error('Error fetching assessments:', error)
+    res.status(500).json({ error: 'Failed to fetch assessments' })
   }
-});
+})
 
-module.exports = router;
+// Get my assessments (for candidates)
+router.get('/my', authenticateToken, requireRole(['CANDIDATE']), async (req, res) => {
+  try {
+    const userId = req.user.id
+
+    const assessments = await prisma.assessment.findMany({
+      where: {
+        application: {
+          candidateId: userId
+        }
+      },
+      include: {
+        application: {
+          include: {
+            job: {
+              include: {
+                company: true
+              }
+            }
+          }
+        },
+        assessmentResults: {
+          where: {
+            candidateId: userId
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    })
+
+    res.json({ assessments })
+  } catch (error) {
+    console.error('Error fetching my assessments:', error)
+    res.status(500).json({ error: 'Failed to fetch assessments' })
+  }
+})
+
+// Get specific assessment with questions
+router.get('/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params
+    const userId = req.user.id
+
+    const assessment = await prisma.assessment.findUnique({
+      where: { id },
+      include: {
+        application: {
+          include: {
+            job: {
+              include: {
+                company: true
+              }
+            },
+            candidate: true
+          }
+        }
+      }
+    })
+
+    if (!assessment) {
+      return res.status(404).json({ error: 'Assessment not found' })
+    }
+
+    // Check if user has access to this assessment
+    const isCandidate = req.user.role === 'CANDIDATE'
+    const isEmployer = ['EMPLOYER', 'HR_MANAGER', 'HIRING_MANAGER'].includes(req.user.role)
+
+    if (isCandidate && assessment.application.candidateId !== userId) {
+      return res.status(403).json({ error: 'Access denied' })
+    }
+
+    if (isEmployer) {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { company: true }
+      })
+      
+      if (assessment.application.job.companyId !== user.company.id) {
+        return res.status(403).json({ error: 'Access denied' })
+      }
+    }
+
+    // For candidates, include randomized questions
+    if (isCandidate && assessment.type === 'COGNITIVE') {
+      const questions = selectRandomQuestions(assessment.type, 25)
+      assessment.questions = questions
+    }
+
+    res.json({ assessment })
+  } catch (error) {
+    console.error('Error fetching assessment:', error)
+    res.status(500).json({ error: 'Failed to fetch assessment' })
+  }
+})
+
+// Create assessment
+router.post('/create', authenticateToken, requireRole(['EMPLOYER', 'HR_MANAGER', 'HIRING_MANAGER']), async (req, res) => {
+  try {
+    const { applicationId, type, timeLimit = 30 } = req.body
+    const userId = req.user.id
+
+    // Verify application exists and user has access
+    const application = await prisma.application.findUnique({
+      where: { id: applicationId },
+      include: {
+        job: {
+          include: { company: true }
+        }
+      }
+    })
+
+    if (!application) {
+      return res.status(404).json({ error: 'Application not found' })
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { company: true }
+    })
+
+    if (application.job.companyId !== user.company.id) {
+      return res.status(403).json({ error: 'Access denied' })
+    }
+
+    // Check if assessment already exists
+    const existingAssessment = await prisma.assessment.findFirst({
+      where: {
+        applicationId,
+        type
+      }
+    })
+
+    if (existingAssessment) {
+      return res.status(400).json({ error: 'Assessment already exists for this application' })
+    }
+
+    const assessment = await prisma.assessment.create({
+      data: {
+        applicationId,
+        type,
+        timeLimit,
+        status: 'pending',
+        createdBy: userId
+      },
+      include: {
+        application: {
+          include: {
+            job: {
+              include: {
+                company: true
+              }
+            },
+            candidate: true
+          }
+        }
+      }
+    })
+
+    res.status(201).json({ assessment })
+  } catch (error) {
+    console.error('Error creating assessment:', error)
+    res.status(500).json({ error: 'Failed to create assessment' })
+  }
+})
+
+// Submit assessment results
+router.post('/:id/submit', authenticateToken, requireRole(['CANDIDATE']), async (req, res) => {
+  try {
+    const { id } = req.params
+    const { answers, timeSpent, proctoringData } = req.body
+    const userId = req.user.id
+
+    // Verify assessment exists and user has access
+    const assessment = await prisma.assessment.findUnique({
+      where: { id },
+      include: {
+        application: {
+          include: {
+            candidate: true
+          }
+        }
+      }
+    })
+
+    if (!assessment) {
+      return res.status(404).json({ error: 'Assessment not found' })
+    }
+
+    if (assessment.application.candidateId !== userId) {
+      return res.status(403).json({ error: 'Access denied' })
+    }
+
+    // Check if already submitted
+    const existingResult = await prisma.assessmentResult.findFirst({
+      where: {
+        assessmentId: id,
+        candidateId: userId
+      }
+    })
+
+    if (existingResult) {
+      return res.status(400).json({ error: 'Assessment already submitted' })
+    }
+
+    // Calculate score
+    let score = 0
+    let totalQuestions = 0
+
+    if (assessment.type === 'COGNITIVE') {
+      // Get the questions that were used for this assessment
+      const questions = selectRandomQuestions(assessment.type, 25)
+      
+      totalQuestions = questions.length
+      let correctAnswers = 0
+
+      questions.forEach(question => {
+        const userAnswer = answers[question.id]
+        if (userAnswer !== undefined && userAnswer === question.correctAnswer) {
+          correctAnswers++
+        }
+      })
+
+      score = Math.round((correctAnswers / totalQuestions) * 100)
+    }
+
+    // Create assessment result
+    const result = await prisma.assessmentResult.create({
+      data: {
+        assessmentId: id,
+        candidateId: userId,
+        score,
+        timeSpent,
+        answers: answers,
+        proctoringData: proctoringData || [],
+        completedAt: new Date()
+      }
+    })
+
+    // Update assessment status
+    await prisma.assessment.update({
+      where: { id },
+      data: { status: 'completed' }
+    })
+
+    res.json({ 
+      result,
+      score,
+      totalQuestions,
+      message: 'Assessment submitted successfully'
+    })
+  } catch (error) {
+    console.error('Error submitting assessment:', error)
+    res.status(500).json({ error: 'Failed to submit assessment' })
+  }
+})
+
+// Get assessment results (for employers)
+router.get('/:id/results', authenticateToken, requireRole(['EMPLOYER', 'HR_MANAGER', 'HIRING_MANAGER']), async (req, res) => {
+  try {
+    const { id } = req.params
+    const userId = req.user.id
+
+    // Verify assessment exists and user has access
+    const assessment = await prisma.assessment.findUnique({
+      where: { id },
+      include: {
+        application: {
+          include: {
+            job: {
+              include: { company: true }
+            }
+          }
+        }
+      }
+    })
+
+    if (!assessment) {
+      return res.status(404).json({ error: 'Assessment not found' })
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { company: true }
+    })
+
+    if (assessment.application.job.companyId !== user.company.id) {
+      return res.status(403).json({ error: 'Access denied' })
+    }
+
+    const results = await prisma.assessmentResult.findMany({
+      where: { assessmentId: id },
+      include: {
+        candidate: true
+      },
+      orderBy: { completedAt: 'desc' }
+    })
+
+    res.json({ results })
+  } catch (error) {
+    console.error('Error fetching assessment results:', error)
+    res.status(500).json({ error: 'Failed to fetch assessment results' })
+  }
+})
+
+module.exports = router

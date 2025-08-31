@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useRouter } from 'next/navigation'
 import { jobsAPI, assessmentsAPI, onboardingAPI } from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -24,11 +25,12 @@ import { formatDate, formatCurrency } from '@/lib/utils'
 import toast from 'react-hot-toast'
 
 export default function CandidatePage() {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState<'applications' | 'assessments' | 'onboarding'>('applications')
 
   const { data: applications, isLoading: applicationsLoading } = useQuery({
     queryKey: ['candidate-applications'],
-    queryFn: () => jobsAPI.getMyApplications(),
+    queryFn: () => jobsAPI.getAll({ my: true }),
     select: (data) => data.data,
     enabled: activeTab === 'applications'
   })
@@ -42,7 +44,7 @@ export default function CandidatePage() {
 
   const { data: onboarding, isLoading: onboardingLoading } = useQuery({
     queryKey: ['candidate-onboarding'],
-    queryFn: () => onboardingAPI.getMyProgress(),
+    queryFn: () => onboardingAPI.getProgress({ my: true }),
     select: (data) => data.data,
     enabled: activeTab === 'onboarding'
   })
@@ -354,20 +356,24 @@ export default function CandidatePage() {
                         </div>
                       )}
                     </div>
-                    <div className="flex space-x-2 mt-4">
-                      {assessment.status === 'pending' && (
-                        <Button size="sm" className="flex-1">
-                          <Play className="w-4 h-4 mr-1" />
-                          Start
-                        </Button>
-                      )}
-                      {assessment.status === 'completed' && (
-                        <Button variant="outline" size="sm" className="flex-1">
-                          <Eye className="w-4 h-4 mr-1" />
-                          View Results
-                        </Button>
-                      )}
-                    </div>
+                                         <div className="flex space-x-2 mt-4">
+                       {assessment.status === 'pending' && (
+                         <Button 
+                           size="sm" 
+                           className="flex-1"
+                           onClick={() => router.push(`/assessment/${assessment.id}`)}
+                         >
+                           <Play className="w-4 h-4 mr-1" />
+                           Start
+                         </Button>
+                       )}
+                       {assessment.status === 'completed' && (
+                         <Button variant="outline" size="sm" className="flex-1">
+                           <Eye className="w-4 h-4 mr-1" />
+                           View Results
+                         </Button>
+                       )}
+                     </div>
                   </CardContent>
                 </Card>
               ))}

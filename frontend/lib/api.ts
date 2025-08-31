@@ -58,9 +58,12 @@ export const jobsAPI = {
 
 export const assessmentsAPI = {
   getAll: (params?: any) => api.get('/assessments', { params }),
+  getMyAssessments: () => api.get('/assessments/my'),
+  getAssessment: (id: string) => api.get(`/assessments/${id}`),
   create: (data: any) => api.post('/assessments/create', data),
   getForCandidate: (id: string) => api.get(`/assessments/take/${id}`),
   submit: (id: string, data: any) => api.post(`/assessments/submit/${id}`, data),
+  submitResults: (id: string, data: any) => api.post(`/assessments/${id}/submit`, data),
   getResults: (id: string) => api.get(`/assessments/results/${id}`),
 }
 
