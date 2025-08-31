@@ -61,8 +61,10 @@ model Job {
   id          String   @id @default(cuid())
   title       String
   description String
-  requirements Json
+  requirements String?
+  benefits    String?
   location    String?
+  type        JobType  @default(FULL_TIME)
   salaryMin   Int?
   salaryMax   Int?
   isActive    Boolean  @default(true)
@@ -287,4 +289,11 @@ enum ProgressStatus {
   NOT_STARTED
   IN_PROGRESS
   COMPLETED
+}
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
 }

@@ -270,10 +270,13 @@ router.post('/', [
   requireCompanyAccess,
   body('title').trim().isLength({ min: 1, max: 200 }),
   body('description').trim().isLength({ min: 10 }),
-  body('requirements').isObject(),
+  body('requirements').optional().trim(),
+  body('benefits').optional().trim(),
   body('location').optional().trim(),
+  body('type').optional().isIn(['full_time', 'part_time', 'contract', 'internship', 'FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP']),
   body('salaryMin').optional().isInt({ min: 0 }),
-  body('salaryMax').optional().isInt({ min: 0 })
+  body('salaryMax').optional().isInt({ min: 0 }),
+  body('isActive').optional().isBoolean()
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -281,21 +284,35 @@ router.post('/', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { title, description, requirements, location, salaryMin, salaryMax } = req.body;
+    const { title, description, requirements, benefits, location, type, salaryMin, salaryMax, isActive } = req.body;
 
     // Validate salary range
     if (salaryMin && salaryMax && salaryMin > salaryMax) {
       return res.status(400).json({ error: 'Minimum salary cannot be greater than maximum salary' });
     }
 
+    // Convert frontend type to enum value
+    const getJobTypeEnum = (type) => {
+      const typeMap = {
+        'full_time': 'FULL_TIME',
+        'part_time': 'PART_TIME',
+        'contract': 'CONTRACT',
+        'internship': 'INTERNSHIP'
+      }
+      return typeMap[type] || 'FULL_TIME'
+    }
+
     const job = await prisma.job.create({
       data: {
         title,
         description,
-        requirements,
-        location,
+        requirements: requirements || null,
+        benefits: benefits || null,
+        location: location || null,
+        type: getJobTypeEnum(type),
         salaryMin: salaryMin ? parseInt(salaryMin) : null,
         salaryMax: salaryMax ? parseInt(salaryMax) : null,
+        isActive: isActive !== undefined ? isActive : true,
         companyId: req.user.companyId,
         createdById: req.user.id
       },

@@ -43,8 +43,17 @@ export default function CreateJobPage() {
       toast.success('Job created successfully!')
       router.push('/dashboard/jobs')
     },
-    onError: (error) => {
-      toast.error('Failed to create job')
+    onError: (error: any) => {
+      if (error.response?.data?.errors) {
+        const errors = error.response.data.errors
+        errors.forEach((err: any) => {
+          toast.error(`${err.path}: ${err.msg}`)
+        })
+      } else if (error.response?.data?.error) {
+        toast.error(error.response.data.error)
+      } else {
+        toast.error('Failed to create job')
+      }
       console.error('Create error:', error)
     }
   })

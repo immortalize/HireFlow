@@ -177,6 +177,12 @@ export default function JobsPage() {
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Type:</span>
+                    <Badge className="text-xs">
+                      {job.type?.replace('_', ' ') || 'Full Time'}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-600">Created:</span>
                     <span>{formatDate(job.createdAt)}</span>
                   </div>
