@@ -16,6 +16,8 @@ model User {
   passwordHash String
   firstName    String?
   lastName     String?
+  phone        String?
+  location     String?
   role         UserRole
   companyId    String?
   isActive     Boolean  @default(true)

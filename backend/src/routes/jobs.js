@@ -742,28 +742,60 @@ router.post('/:id/apply', upload.single('resume'), [
 
     if (!candidate) {
       // Create new candidate user
-      candidate = await prisma.user.create({
-        data: {
-          email,
-          firstName,
-          lastName,
-          phone,
-          location,
-          role: 'CANDIDATE',
-          password: 'temp_password_' + Math.random().toString(36).substr(2, 9) // Temporary password
+      try {
+        candidate = await prisma.user.create({
+          data: {
+            email,
+            firstName,
+            lastName,
+            phone: phone || null,
+            location: location || null,
+            role: 'CANDIDATE',
+            passwordHash: 'temp_password_' + Math.random().toString(36).substr(2, 9) // Temporary password
+          }
+        });
+      } catch (error) {
+        // Fallback if phone/location fields don't exist yet
+        if (error.message.includes('Unknown argument')) {
+          candidate = await prisma.user.create({
+            data: {
+              email,
+              firstName,
+              lastName,
+              role: 'CANDIDATE',
+              passwordHash: 'temp_password_' + Math.random().toString(36).substr(2, 9)
+            }
+          });
+        } else {
+          throw error;
         }
-      });
+      }
     } else {
       // Update existing user information
-      await prisma.user.update({
-        where: { id: candidate.id },
-        data: {
-          firstName,
-          lastName,
-          phone,
-          location
+      try {
+        await prisma.user.update({
+          where: { id: candidate.id },
+          data: {
+            firstName,
+            lastName,
+            phone: phone || null,
+            location: location || null
+          }
+        });
+      } catch (error) {
+        // Fallback if phone/location fields don't exist yet
+        if (error.message.includes('Unknown argument')) {
+          await prisma.user.update({
+            where: { id: candidate.id },
+            data: {
+              firstName,
+              lastName
+            }
+          });
+        } else {
+          throw error;
         }
-      });
+      }
     }
 
     // Create application
