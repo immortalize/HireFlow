@@ -262,7 +262,7 @@ export default function CandidatePage() {
                 <p className="text-gray-600 mb-4">
                   Start your job search by applying to positions
                 </p>
-                <Button>
+                <Button onClick={() => router.push('/jobs')}>
                   <FileText className="w-4 h-4 mr-2" />
                   Browse Jobs
                 </Button>
@@ -368,7 +368,12 @@ export default function CandidatePage() {
                          </Button>
                        )}
                        {assessment.status === 'completed' && (
-                         <Button variant="outline" size="sm" className="flex-1">
+                         <Button 
+                           variant="outline" 
+                           size="sm" 
+                           className="flex-1"
+                           onClick={() => router.push(`/assessment/${assessment.id}/results`)}
+                         >
                            <Eye className="w-4 h-4 mr-1" />
                            View Results
                          </Button>
@@ -386,7 +391,7 @@ export default function CandidatePage() {
                 <p className="text-gray-600 mb-4">
                   Complete job applications to receive assessments
                 </p>
-                <Button>
+                <Button onClick={() => router.push('/jobs')}>
                   <FileText className="w-4 h-4 mr-2" />
                   Browse Jobs
                 </Button>
@@ -512,7 +517,7 @@ export default function CandidatePage() {
                 <p className="text-gray-600 mb-4">
                   Complete your hiring process to access onboarding materials
                 </p>
-                <Button>
+                <Button onClick={() => router.push('/jobs')}>
                   <FileText className="w-4 h-4 mr-2" />
                   Browse Jobs
                 </Button>
