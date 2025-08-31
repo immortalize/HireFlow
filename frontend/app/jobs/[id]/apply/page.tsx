@@ -51,8 +51,8 @@ export default function JobApplicationPage() {
   // Get job details
   const { data: job, isLoading: jobLoading } = useQuery({
     queryKey: ['job', jobId],
-    queryFn: () => jobsAPI.getById(jobId),
-    select: (data) => data.data,
+    queryFn: () => jobsAPI.getPublic({ id: jobId }),
+    select: (data) => data.data?.job,
     enabled: !!jobId
   })
 
@@ -247,12 +247,12 @@ export default function JobApplicationPage() {
             <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
               <FileText className="w-6 h-6 text-blue-600" />
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Apply for {job.title}</h1>
-              <p className="text-sm text-gray-600">
-                Submit your application for this position
-              </p>
-            </div>
+                          <div>
+                <h1 className="text-2xl font-bold text-gray-900">Apply for {job.title || 'Position'}</h1>
+                <p className="text-sm text-gray-600">
+                  Submit your application for this position
+                </p>
+              </div>
           </div>
         </div>
       </div>
@@ -272,10 +272,10 @@ export default function JobApplicationPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium text-gray-900 truncate">
-                      {job.title}
+                      {job.title || 'Job Title'}
                     </h3>
                     <p className="text-sm text-gray-600">
-                      {job.company.name}
+                      {job.company?.name || 'Company Name'}
                     </p>
                   </div>
                 </div>
@@ -295,7 +295,7 @@ export default function JobApplicationPage() {
                   
                   <div className="flex items-center text-sm">
                     <Calendar className="w-4 h-4 mr-2 text-gray-400" />
-                    <span>Posted {formatDate(job.createdAt)}</span>
+                    <span>Posted {formatDate(job.createdAt || new Date())}</span>
                   </div>
                   
                   <Badge className="w-fit">
