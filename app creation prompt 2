@@ -1,0 +1,84 @@
+You are an expert full-stack web developer with extensive experience in building SaaS platforms using modern JavaScript technologies. Your goal is to design and prototype a lightweight SaaS hiring pipeline platform called "HireFlow" that streamlines candidate screening, testing, onboarding, and training for employers. The platform should integrate simple business development and sales CRM features, support collaborative access, and include tools for branding and culture building.
+
+Follow these best practices:
+- Build a minimal viable product (MVP) that is functional but lightweight—avoid over-engineering; focus on core features with clean, maintainable code.
+- Use a modular architecture for scalability.
+- Ensure security basics: implement authentication, authorization, input validation, and basic data encryption where needed.
+- Make the UI intuitive, responsive, and accessible, with a clean modern design (e.g., using Tailwind CSS for styling).
+- Handle errors gracefully and include basic logging.
+- Provide setup instructions, including how to run the app locally and deploy to a cloud platform like Vercel for frontend and Heroku/Railway for backend.
+- Output the complete source code in a structured format: describe the folder structure first, then provide code for each key file. Use markdown code blocks for each file's content.
+
+Tech Stack:
+- Frontend: Next.js (latest stable version, with App Router for routing).
+- Backend: Node.js with Express.js.
+- Database: PostgreSQL (use Prisma as ORM for schema management and queries).
+- Authentication: Implement JWT-based auth with bcrypt for password hashing.
+- Additional libraries: 
+  - Frontend: React Hook Form for forms, Zod for validation, Tanstack Query for data fetching, Tailwind CSS for styling.
+  - Backend: Cors, dotenv for env vars, Nodemailer for emails (if needed for notifications).
+  - Testing/Proctoring: For assessments, use simple randomization logic; for webcam proctoring, integrate a basic client-side library like getUserMedia API (no full third-party services in MVP).
+  - Other: Multer for file uploads (e.g., for branding templates).
+
+Core Features to Implement:
+1. **User Authentication and Roles**:
+   - User registration/login (email/password, with role selection: Employer/HR, Hiring Manager, Business Dev Partner, Candidate).
+   - Role-based access: Employers create/manage jobs; HR/Managers collaborate on reviews; Candidates apply and take tests; Business Dev tracks leads.
+
+2. **Job Postings**:
+   - Employers can create, edit, delete job postings with fields: title, description, requirements (skills, experience), location, salary range.
+   - Public job board for candidates to browse and apply.
+
+3. **Candidate Assessments**:
+   - Built-in tests:
+     - Cognitive ability (similar to CCAT): 20-30 multiple-choice questions on logic, math, verbal (randomized from a bank of 100+ questions stored in DB).
+     - English proficiency (similar to EF SET): Grammar, vocabulary, reading comprehension questions.
+     - Situational judgment/role-fit: Scenario-based questions tailored to job type.
+     - Basic fit check questionnaire: 5-10 yes/no or multiple-choice questions at application start to filter eligibility (e.g., "Do you have 2+ years experience?").
+   - Authenticity: Randomize questions per session; optional webcam proctoring (client-side snapshot capture at intervals, stored as proof); automated scoring and verification (e.g., time limits, plagiarism checks for text answers via simple string matching).
+   - Candidates take tests via a proctored interface; results auto-scored and shared with employers.
+
+4. **CRM Features**:
+   - Simple tracking: Leads (potential partners/clients), Partners, Candidates.
+   - Fields: Name, email, status (e.g., contacted, qualified), notes/memos.
+   - Basic dashboard for searching, filtering, and adding notes.
+   - Collaborative: Multiple users can view/edit shared records with audit logs.
+
+5. **Collaborative Access**:
+   - Invite team members via email to join a company workspace.
+   - Real-time or polled updates for shared views (e.g., candidate pipelines using WebSockets or long-polling if lightweight).
+
+6. **Onboarding and Training**:
+   - Orientation modules: Upload/create simple video/text-based training content (e.g., company policies, tools intro).
+   - New hires access personalized onboarding dashboard with checklists, quizzes, and progress tracking.
+
+7. **Branding and Culture**:
+   - Templates: Pre-built customizable pages/emails for job postings, offer letters, with company logo, colors, and culture statements (e.g., values, mission).
+   - Admin dashboard to upload assets and apply branding globally.
+
+Database Schema Overview (define in Prisma schema):
+- Users: id, email, passwordHash, role, companyId.
+- Companies: id, name, branding (JSON for logo/colors).
+- Jobs: id, title, description, requirements (JSON), companyId.
+- Applications: id, candidateId, jobId, status, fitQuestionnaireResponses (JSON).
+- Assessments: id, type (cognitive/english/sjt), questionsBank (JSON array), applicationId.
+- AssessmentResults: id, assessmentId, score, proctoringData (JSON).
+- CRM_Leads: id, name, email, status, notes, companyId.
+- OnboardingModules: id, title, content (text/video URLs), companyId.
+- OnboardingProgress: id, userId, moduleId, status.
+
+Project Structure:
+- Root: Separate folders for frontend (nextjs-app) and backend (node-express-api).
+- Frontend: pages/api for API routes if needed, but primarily fetch from backend.
+- Backend: Routes for auth, jobs, assessments, crm, onboarding, etc.
+
+Step-by-Step Development Process (think aloud in your response before coding):
+1. Set up backend: Initialize Express server, connect to Postgres via Prisma, define schema and migrate.
+2. Implement auth endpoints.
+3. Build core API routes for each feature.
+4. Set up frontend: Create Next.js app, implement pages for dashboard, job creation, assessments, etc.
+5. Integrate frontend with backend APIs.
+6. Add testing logic with randomization and proctoring.
+7. Ensure responsiveness and basic UI/UX.
+
+Finally, output the full source code with explanations for key parts. If any feature can't be fully implemented in code (e.g., advanced proctoring), note placeholders and suggest extensions. Ensure the app is deployable with minimal config.
