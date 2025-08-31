@@ -1,10 +1,28 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const { PrismaClient } = require('@prisma/client');
+const multer = require('multer');
 const { requireRole, requireCompanyAccess } = require('../middleware/auth');
 
 const router = express.Router();
 const prisma = new PrismaClient();
+
+// Configure multer for file uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/pdf' || 
+        file.mimetype === 'application/msword' || 
+        file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      cb(null, true);
+    } else {
+      cb(new Error('Only PDF and Word documents are allowed'));
+    }
+  }
+});
 
 // Get public jobs (for job board)
 router.get('/public', async (req, res) => {
@@ -634,20 +652,36 @@ router.get('/:id/stats', requireCompanyAccess, async (req, res) => {
 });
 
 // Apply for a job (public route)
-router.post('/:id/apply', [
+router.post('/:id/apply', upload.single('resume'), [
   body('firstName').trim().isLength({ min: 1, max: 100 }),
   body('lastName').trim().isLength({ min: 1, max: 100 }),
   body('email').isEmail().normalizeEmail(),
   body('phone').trim().isLength({ min: 1 }),
   body('location').trim().isLength({ min: 1 }),
   body('coverLetter').trim().isLength({ min: 10 }),
-  body('fitQuestionnaire').isObject(),
+  body('fitQuestionnaire').custom((value) => {
+    try {
+      if (typeof value === 'string') {
+        JSON.parse(value);
+      } else if (typeof value === 'object') {
+        return true;
+      }
+      return true;
+    } catch (error) {
+      throw new Error('fitQuestionnaire must be a valid JSON object');
+    }
+  }),
   body('resume').optional()
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
+    }
+
+    // Handle multer errors
+    if (req.fileValidationError) {
+      return res.status(400).json({ error: req.fileValidationError });
     }
 
     const { id } = req.params;
@@ -658,9 +692,19 @@ router.post('/:id/apply', [
       phone, 
       location, 
       coverLetter, 
-      fitQuestionnaire,
+      fitQuestionnaire: rawFitQuestionnaire,
       resume 
     } = req.body;
+
+    // Parse fitQuestionnaire if it's a JSON string
+    let fitQuestionnaire;
+    try {
+      fitQuestionnaire = typeof rawFitQuestionnaire === 'string' 
+        ? JSON.parse(rawFitQuestionnaire) 
+        : rawFitQuestionnaire;
+    } catch (error) {
+      return res.status(400).json({ error: 'Invalid fitQuestionnaire format' });
+    }
 
     // Check if job exists and is active
     const job = await prisma.job.findFirst({
@@ -729,6 +773,7 @@ router.post('/:id/apply', [
         candidateId: candidate.id,
         coverLetter,
         fitQuestionnaireResponses: fitQuestionnaire,
+        resume: resumeData ? JSON.stringify(resumeData) : null,
         status: 'APPLIED'
       },
       include: {
@@ -748,13 +793,17 @@ router.post('/:id/apply', [
       }
     });
 
-    // TODO: Handle resume file upload
-    // For now, we'll just store the filename if provided
-    if (resume) {
-      // In a real implementation, you would:
-      // 1. Upload file to cloud storage (AWS S3, etc.)
-      // 2. Store the file URL in the database
-      // 3. Handle file validation and security
+    // Handle resume file upload
+    let resumeData = null;
+    if (req.file) {
+      // In a real implementation, you would upload to cloud storage
+      // For now, we'll store basic file info
+      resumeData = {
+        filename: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+        uploadedAt: new Date()
+      };
     }
 
     res.status(201).json({

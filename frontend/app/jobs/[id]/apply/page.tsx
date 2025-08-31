@@ -147,6 +147,9 @@ export default function JobApplicationPage() {
     // Add resume file if exists
     if (formData.resume) {
       formDataToSend.append('resume', formData.resume)
+    } else {
+      // Add empty resume field to ensure backend validation passes
+      formDataToSend.append('resume', '')
     }
 
     submitMutation.mutate(formDataToSend)
