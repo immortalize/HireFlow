@@ -327,6 +327,82 @@ router.post('/create', authenticateToken, requireRole(['EMPLOYER', 'HR_MANAGER',
     const { applicationId, type, timeLimit = 30 } = req.body
     const userId = req.user.id
 
+    // Generate questions bank based on assessment type
+    let questionsBank = {}
+    if (type === 'COGNITIVE') {
+      // Select random questions from the cognitive bank
+      const selectedQuestions = selectRandomQuestions('COGNITIVE', 20)
+      questionsBank = {
+        questions: selectedQuestions,
+        totalQuestions: selectedQuestions.length,
+        timeLimit: timeLimit * 60 // Convert to seconds
+      }
+    } else if (type === 'ENGLISH') {
+      questionsBank = {
+        questions: [
+          {
+            id: 1,
+            type: 'grammar',
+            question: 'Choose the correct form: "She _____ to the store yesterday."',
+            options: ['go', 'goes', 'went', 'going'],
+            correctAnswer: 2
+          },
+          {
+            id: 2,
+            type: 'vocabulary',
+            question: 'What is the meaning of "ubiquitous"?',
+            options: ['rare', 'common', 'expensive', 'difficult'],
+            correctAnswer: 1
+          }
+        ],
+        totalQuestions: 2,
+        timeLimit: timeLimit * 60
+      }
+    } else if (type === 'SITUATIONAL_JUDGMENT') {
+      questionsBank = {
+        questions: [
+          {
+            id: 1,
+            type: 'scenario',
+            question: 'A team member consistently misses deadlines. How would you handle this?',
+            options: [
+              'Immediately report them to HR',
+              'Have a private conversation to understand the issue',
+              'Ignore the problem',
+              'Take over their work'
+            ],
+            correctAnswer: 1
+          }
+        ],
+        totalQuestions: 1,
+        timeLimit: timeLimit * 60
+      }
+    } else if (type === 'FIT_CHECK') {
+      questionsBank = {
+        questions: [
+          {
+            id: 1,
+            type: 'preference',
+            question: 'How do you prefer to work?',
+            options: [
+              'Independently',
+              'In small teams',
+              'In large teams',
+              'Mixed approach'
+            ],
+            correctAnswer: null // No correct answer for fit questions
+          }
+        ],
+        totalQuestions: 1,
+        timeLimit: timeLimit * 60
+      }
+    }
+
+    // Ensure questions bank was generated
+    if (!questionsBank.questions || questionsBank.questions.length === 0) {
+      return res.status(400).json({ error: 'Failed to generate questions bank for assessment type' })
+    }
+
     // Verify application exists and user has access
     const application = await prisma.application.findUnique({
       where: { id: applicationId },
@@ -366,9 +442,9 @@ router.post('/create', authenticateToken, requireRole(['EMPLOYER', 'HR_MANAGER',
       data: {
         applicationId,
         type,
+        questionsBank,
         timeLimit,
-        status: 'pending',
-        createdBy: userId
+        isActive: true
       },
       include: {
         application: {
