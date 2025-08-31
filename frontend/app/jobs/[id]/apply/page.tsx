@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { jobsAPI } from '@/lib/api'
+import { jobsAPI, authAPI } from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -29,6 +29,8 @@ export default function JobApplicationPage() {
   const router = useRouter()
   const jobId = params.id as string
 
+  const [isEditing, setIsEditing] = useState(false)
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -47,6 +49,14 @@ export default function JobApplicationPage() {
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  // Get current user information
+  const { data: user, isLoading: userLoading } = useQuery({
+    queryKey: ['current-user'],
+    queryFn: () => authAPI.me(),
+    select: (data) => data.data,
+    enabled: true // Always fetch user data
+  })
 
   // Get job details
   const { data: job, isLoading: jobLoading } = useQuery({
@@ -72,6 +82,20 @@ export default function JobApplicationPage() {
       console.error('Application error:', error)
     }
   })
+
+  // Populate form with user data when available
+  useEffect(() => {
+    if (user && user.role === 'CANDIDATE' && !isEditing) {
+      setFormData(prev => ({
+        ...prev,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        location: user.location || ''
+      }))
+    }
+  }, [user, isEditing])
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
@@ -208,12 +232,12 @@ export default function JobApplicationPage() {
     }
   }
 
-  if (jobLoading) {
+  if (jobLoading || userLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading job details...</p>
+          <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
     )
@@ -335,8 +359,29 @@ export default function JobApplicationPage() {
                 <Card>
                   <CardHeader>
                     <CardTitle>Personal Information</CardTitle>
-                    <CardDescription>
-                      Your basic contact information
+                    <CardDescription className="flex items-center justify-between">
+                      <span>
+                        Your basic contact information
+                        {user && user.role === 'CANDIDATE' && (
+                          <span className="text-green-600 ml-2">
+                            (Pre-filled from your profile)
+                          </span>
+                        )}
+                        {(!user || user.role !== 'CANDIDATE') && (
+                          <span className="text-blue-600 ml-2">
+                            (Please fill in your details)
+                          </span>
+                        )}
+                      </span>
+                      {user && user.role === 'CANDIDATE' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setIsEditing(!isEditing)}
+                        >
+                          {isEditing ? 'Use Profile Data' : 'Edit Details'}
+                        </Button>
+                      )}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -350,7 +395,8 @@ export default function JobApplicationPage() {
                           value={formData.firstName}
                           onChange={(e) => handleInputChange('firstName', e.target.value)}
                           className={`input ${errors.firstName ? 'border-red-500' : ''}`}
-                          placeholder="John"
+                          placeholder={userLoading ? 'Loading...' : 'John'}
+                          disabled={userLoading}
                         />
                         {errors.firstName && (
                           <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>
@@ -366,7 +412,8 @@ export default function JobApplicationPage() {
                           value={formData.lastName}
                           onChange={(e) => handleInputChange('lastName', e.target.value)}
                           className={`input ${errors.lastName ? 'border-red-500' : ''}`}
-                          placeholder="Doe"
+                          placeholder={userLoading ? 'Loading...' : 'Doe'}
+                          disabled={userLoading}
                         />
                         {errors.lastName && (
                           <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>
@@ -378,13 +425,14 @@ export default function JobApplicationPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Email *
                       </label>
-                      <input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => handleInputChange('email', e.target.value)}
-                        className={`input ${errors.email ? 'border-red-500' : ''}`}
-                        placeholder="john.doe@example.com"
-                      />
+                                              <input
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) => handleInputChange('email', e.target.value)}
+                          className={`input ${errors.email ? 'border-red-500' : ''}`}
+                          placeholder={userLoading ? 'Loading...' : 'john.doe@example.com'}
+                          disabled={userLoading}
+                        />
                       {errors.email && (
                         <p className="text-red-500 text-sm mt-1">{errors.email}</p>
                       )}
@@ -394,13 +442,14 @@ export default function JobApplicationPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Phone Number *
                       </label>
-                      <input
-                        type="tel"
-                        value={formData.phone}
-                        onChange={(e) => handleInputChange('phone', e.target.value)}
-                        className={`input ${errors.phone ? 'border-red-500' : ''}`}
-                        placeholder="+1 (555) 123-4567"
-                      />
+                                              <input
+                          type="tel"
+                          value={formData.phone}
+                          onChange={(e) => handleInputChange('phone', e.target.value)}
+                          className={`input ${errors.phone ? 'border-red-500' : ''}`}
+                          placeholder={userLoading ? 'Loading...' : '+1 (555) 123-4567'}
+                          disabled={userLoading}
+                        />
                       {errors.phone && (
                         <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
                       )}
@@ -410,13 +459,14 @@ export default function JobApplicationPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Location *
                       </label>
-                      <input
-                        type="text"
-                        value={formData.location}
-                        onChange={(e) => handleInputChange('location', e.target.value)}
-                        className={`input ${errors.location ? 'border-red-500' : ''}`}
-                        placeholder="San Francisco, CA"
-                      />
+                                              <input
+                          type="text"
+                          value={formData.location}
+                          onChange={(e) => handleInputChange('location', e.target.value)}
+                          className={`input ${errors.location ? 'border-red-500' : ''}`}
+                          placeholder={userLoading ? 'Loading...' : 'San Francisco, CA'}
+                          disabled={userLoading}
+                        />
                       {errors.location && (
                         <p className="text-red-500 text-sm mt-1">{errors.location}</p>
                       )}
