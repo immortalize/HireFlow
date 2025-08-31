@@ -96,7 +96,7 @@ export default function AssessmentsPage() {
                 </p>
               </div>
             </div>
-            <Button>
+            <Button onClick={() => router.push('/dashboard/assessments/create')}>
               <Plus className="w-4 h-4 mr-2" />
               Create Assessment
             </Button>
@@ -244,7 +244,7 @@ export default function AssessmentsPage() {
                 : 'Create your first assessment to get started'
               }
             </p>
-            <Button>
+            <Button onClick={() => router.push('/dashboard/assessments/create')}>
               <Plus className="w-4 h-4 mr-2" />
               Create Assessment
             </Button>

@@ -49,6 +49,7 @@ export const authAPI = {
 export const jobsAPI = {
   getAll: (params?: any) => api.get('/jobs', { params }),
   getPublic: (params?: any) => api.get('/jobs/public', { params }),
+  getApplicationsNeedingAssessments: () => api.get('/jobs/applications-needing-assessments'),
   getById: (id: string) => api.get(`/jobs/${id}`),
   create: (data: any) => api.post('/jobs', data),
   update: (id: string, data: any) => api.put(`/jobs/${id}`, data),

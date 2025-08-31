@@ -14,6 +14,7 @@ router.get('/', requireCompanyAccess, async (req, res) => {
       limit = 10, 
       status, 
       search,
+      needsAssessment,
       sortBy = 'createdAt',
       sortOrder = 'desc'
     } = req.query;
@@ -38,6 +39,17 @@ router.get('/', requireCompanyAccess, async (req, res) => {
       ];
     }
 
+    // Filter for applications that need assessments
+    if (needsAssessment === 'true') {
+      whereClause.applications = {
+        some: {
+          assessments: {
+            none: {}
+          }
+        }
+      };
+    }
+
     // Get jobs with pagination
     const jobs = await prisma.job.findMany({
       where: whereClause,
@@ -50,6 +62,24 @@ router.get('/', requireCompanyAccess, async (req, res) => {
             email: true
           }
         },
+        applications: needsAssessment === 'true' ? {
+          include: {
+            candidate: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true
+              }
+            },
+            assessments: {
+              select: {
+                id: true,
+                type: true
+              }
+            }
+          }
+        } : undefined,
         _count: {
           select: {
             applications: true
@@ -78,6 +108,45 @@ router.get('/', requireCompanyAccess, async (req, res) => {
   } catch (error) {
     console.error('Get jobs error:', error);
     res.status(500).json({ error: 'Failed to fetch jobs' });
+  }
+});
+
+// Get applications that need assessments
+router.get('/applications-needing-assessments', requireCompanyAccess, async (req, res) => {
+  try {
+    const applications = await prisma.application.findMany({
+      where: {
+        job: {
+          companyId: req.user.companyId
+        },
+        assessments: {
+          none: {}
+        }
+      },
+      include: {
+        job: {
+          include: {
+            company: true
+          }
+        },
+        candidate: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    res.json({ applications });
+  } catch (error) {
+    console.error('Get applications needing assessments error:', error);
+    res.status(500).json({ error: 'Failed to fetch applications' });
   }
 });
 
