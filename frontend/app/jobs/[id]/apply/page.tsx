@@ -465,7 +465,6 @@ export default function JobApplicationPage() {
                         )}
                       </div>
                     </div>
-                    </div>
                   </CardContent>
                 </Card>
 
