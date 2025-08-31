@@ -6,6 +6,124 @@ const { requireRole, requireCompanyAccess } = require('../middleware/auth');
 const router = express.Router();
 const prisma = new PrismaClient();
 
+// Get public jobs (for job board)
+router.get('/public', async (req, res) => {
+  try {
+    const { 
+      page = 1, 
+      limit = 10, 
+      search,
+      location,
+      type,
+      sortBy = 'createdAt',
+      sortOrder = 'desc'
+    } = req.query;
+
+    const skip = (page - 1) * limit;
+    
+    let whereClause = {
+      isActive: true
+    };
+
+    // Search functionality
+    if (search) {
+      whereClause.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+        { company: { name: { contains: search, mode: 'insensitive' } } }
+      ];
+    }
+
+    // Filter by location
+    if (location) {
+      whereClause.location = { contains: location, mode: 'insensitive' };
+    }
+
+    // Filter by job type
+    if (type) {
+      whereClause.type = type.toUpperCase();
+    }
+
+    // Get jobs with pagination
+    const jobs = await prisma.job.findMany({
+      where: whereClause,
+      include: {
+        company: {
+          select: {
+            id: true,
+            name: true,
+            logo: true
+          }
+        },
+        _count: {
+          select: {
+            applications: true
+          }
+        }
+      },
+      orderBy: {
+        [sortBy]: sortOrder
+      },
+      skip: parseInt(skip),
+      take: parseInt(limit)
+    });
+
+    // Get total count for pagination
+    const totalJobs = await prisma.job.count({ where: whereClause });
+
+    res.json({
+      jobs,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: totalJobs,
+        pages: Math.ceil(totalJobs / limit)
+      }
+    });
+  } catch (error) {
+    console.error('Get public jobs error:', error);
+    res.status(500).json({ error: 'Failed to fetch jobs' });
+  }
+});
+
+// Get individual public job
+router.get('/public/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const job = await prisma.job.findFirst({
+      where: {
+        id,
+        isActive: true
+      },
+      include: {
+        company: {
+          select: {
+            id: true,
+            name: true,
+            logo: true,
+            description: true
+          }
+        },
+        _count: {
+          select: {
+            applications: true
+          }
+        }
+      }
+    });
+
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    res.json({ job });
+  } catch (error) {
+    console.error('Get public job error:', error);
+    res.status(500).json({ error: 'Failed to fetch job' });
+  }
+});
+
 // Get all jobs for company (with filters)
 router.get('/', requireCompanyAccess, async (req, res) => {
   try {
@@ -512,6 +630,147 @@ router.get('/:id/stats', requireCompanyAccess, async (req, res) => {
   } catch (error) {
     console.error('Get job stats error:', error);
     res.status(500).json({ error: 'Failed to fetch job statistics' });
+  }
+});
+
+// Apply for a job (public route)
+router.post('/:id/apply', [
+  body('firstName').trim().isLength({ min: 1, max: 100 }),
+  body('lastName').trim().isLength({ min: 1, max: 100 }),
+  body('email').isEmail().normalizeEmail(),
+  body('phone').trim().isLength({ min: 1 }),
+  body('location').trim().isLength({ min: 1 }),
+  body('coverLetter').trim().isLength({ min: 10 }),
+  body('fitQuestionnaire').isObject(),
+  body('resume').optional()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { id } = req.params;
+    const { 
+      firstName, 
+      lastName, 
+      email, 
+      phone, 
+      location, 
+      coverLetter, 
+      fitQuestionnaire,
+      resume 
+    } = req.body;
+
+    // Check if job exists and is active
+    const job = await prisma.job.findFirst({
+      where: {
+        id,
+        isActive: true
+      },
+      include: {
+        company: true
+      }
+    });
+
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found or not active' });
+    }
+
+    // Check if user already applied for this job
+    const existingApplication = await prisma.application.findFirst({
+      where: {
+        jobId: id,
+        candidate: {
+          email: email
+        }
+      }
+    });
+
+    if (existingApplication) {
+      return res.status(400).json({ error: 'You have already applied for this job' });
+    }
+
+    // Create or find candidate user
+    let candidate = await prisma.user.findFirst({
+      where: { email }
+    });
+
+    if (!candidate) {
+      // Create new candidate user
+      candidate = await prisma.user.create({
+        data: {
+          email,
+          firstName,
+          lastName,
+          phone,
+          location,
+          role: 'CANDIDATE',
+          password: 'temp_password_' + Math.random().toString(36).substr(2, 9) // Temporary password
+        }
+      });
+    } else {
+      // Update existing user information
+      await prisma.user.update({
+        where: { id: candidate.id },
+        data: {
+          firstName,
+          lastName,
+          phone,
+          location
+        }
+      });
+    }
+
+    // Create application
+    const application = await prisma.application.create({
+      data: {
+        jobId: id,
+        candidateId: candidate.id,
+        coverLetter,
+        fitQuestionnaireResponses: fitQuestionnaire,
+        status: 'APPLIED'
+      },
+      include: {
+        job: {
+          include: {
+            company: true
+          }
+        },
+        candidate: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    // TODO: Handle resume file upload
+    // For now, we'll just store the filename if provided
+    if (resume) {
+      // In a real implementation, you would:
+      // 1. Upload file to cloud storage (AWS S3, etc.)
+      // 2. Store the file URL in the database
+      // 3. Handle file validation and security
+    }
+
+    res.status(201).json({
+      message: 'Application submitted successfully',
+      application: {
+        id: application.id,
+        status: application.status,
+        job: {
+          title: application.job.title,
+          company: application.job.company.name
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Job application error:', error);
+    res.status(500).json({ error: 'Failed to submit application' });
   }
 });
 

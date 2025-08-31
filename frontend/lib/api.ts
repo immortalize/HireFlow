@@ -55,6 +55,7 @@ export const jobsAPI = {
   update: (id: string, data: any) => api.put(`/jobs/${id}`, data),
   delete: (id: string) => api.delete(`/jobs/${id}`),
   getStats: (id: string) => api.get(`/jobs/${id}/stats`),
+  apply: (jobId: string, data: any) => api.post(`/jobs/${jobId}/apply`, data),
 }
 
 export const assessmentsAPI = {

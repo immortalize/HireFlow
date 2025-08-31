@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useRouter } from 'next/navigation'
 import { jobsAPI } from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -20,6 +21,7 @@ import { formatDate, formatCurrency } from '@/lib/utils'
 import toast from 'react-hot-toast'
 
 export default function JobsPage() {
+  const router = useRouter()
   const [filters, setFilters] = useState({
     search: '',
     location: '',
@@ -207,7 +209,10 @@ export default function JobsPage() {
                   )}
                 </div>
                 <div className="flex space-x-2 mt-4">
-                  <Button className="flex-1">
+                  <Button 
+                    className="flex-1"
+                    onClick={() => router.push(`/jobs/${job.id}/apply`)}
+                  >
                     <FileText className="w-4 h-4 mr-1" />
                     Apply Now
                   </Button>
