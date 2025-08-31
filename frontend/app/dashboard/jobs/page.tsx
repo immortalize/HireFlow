@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useRouter } from 'next/navigation'
 import { jobsAPI } from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -22,6 +23,7 @@ import { formatDate, formatCurrency } from '@/lib/utils'
 import toast from 'react-hot-toast'
 
 export default function JobsPage() {
+  const router = useRouter()
   const [filters, setFilters] = useState({
     status: '',
     search: '',
@@ -80,7 +82,7 @@ export default function JobsPage() {
                 </p>
               </div>
             </div>
-            <Button>
+            <Button onClick={() => router.push('/dashboard/jobs/create')}>
               <Plus className="w-4 h-4 mr-2" />
               Create Job
             </Button>
@@ -226,7 +228,7 @@ export default function JobsPage() {
                 : 'Create your first job posting to get started'
               }
             </p>
-            <Button>
+            <Button onClick={() => router.push('/dashboard/jobs/create')}>
               <Plus className="w-4 h-4 mr-2" />
               Create Job
             </Button>
