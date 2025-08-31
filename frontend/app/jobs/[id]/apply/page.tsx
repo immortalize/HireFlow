@@ -102,9 +102,11 @@ export default function JobApplicationPage() {
       newErrors.coverLetter = 'Cover letter is required'
     }
 
-    if (!formData.resume) {
-      newErrors.resume = 'Resume is required'
-    }
+    // Validate resume upload
+    // Optional: Uncomment if resume is mandatory
+    // if (!formData.resume) {
+    //   newErrors.resume = 'Resume is required'
+    // }
 
     // Validate fit questionnaire
     if (!formData.fitQuestionnaire.experience.trim()) {
