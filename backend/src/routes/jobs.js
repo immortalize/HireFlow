@@ -798,6 +798,19 @@ router.post('/:id/apply', upload.single('resume'), [
       }
     }
 
+    // Handle resume file upload
+    let resumeData = null;
+    if (req.file) {
+      // In a real implementation, you would upload to cloud storage
+      // For now, we'll store basic file info
+      resumeData = {
+        filename: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+        uploadedAt: new Date()
+      };
+    }
+
     // Create application
     const application = await prisma.application.create({
       data: {
@@ -824,19 +837,6 @@ router.post('/:id/apply', upload.single('resume'), [
         }
       }
     });
-
-    // Handle resume file upload
-    let resumeData = null;
-    if (req.file) {
-      // In a real implementation, you would upload to cloud storage
-      // For now, we'll store basic file info
-      resumeData = {
-        filename: req.file.originalname,
-        mimetype: req.file.mimetype,
-        size: req.file.size,
-        uploadedAt: new Date()
-      };
-    }
 
     res.status(201).json({
       message: 'Application submitted successfully',
