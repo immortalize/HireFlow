@@ -15,7 +15,8 @@ import {
   GraduationCap,
   Settings,
   LogOut,
-  User
+  User,
+  Link
 } from 'lucide-react'
 import { getRoleDisplayName } from '@/lib/utils'
 
@@ -53,6 +54,13 @@ export default function DashboardPage() {
       icon: FileText,
       href: '/dashboard/jobs',
       color: 'bg-blue-100 text-blue-600'
+    },
+    {
+      title: 'Hiring Pipelines',
+      description: 'Create and share assessment pipelines',
+      icon: Link,
+      href: '/dashboard/pipelines',
+      color: 'bg-teal-100 text-teal-600'
     },
     {
       title: 'Assessments',

@@ -115,3 +115,15 @@ export const usersAPI = {
   getCompanySettings: () => api.get('/users/company/settings'),
   updateCompanySettings: (data: any) => api.put('/users/company/settings', data),
 }
+
+export const pipelinesAPI = {
+  getAll: (params?: any) => api.get('/pipelines', { params }),
+  getById: (id: string) => api.get(`/pipelines/${id}`),
+  create: (data: any) => api.post('/pipelines', data),
+  getByToken: (token: string) => api.get(`/pipelines/token/${token}`),
+  startPipeline: (token: string, data: any) => api.post(`/pipelines/token/${token}/start`, data),
+  submitAssessment: (token: string, assessmentId: string, data: any) => 
+    api.post(`/pipelines/token/${token}/assessment/${assessmentId}/submit`, data),
+  getCandidateProgress: (token: string, candidateId: string) => 
+    api.get(`/pipelines/token/${token}/candidate/${candidateId}`),
+}

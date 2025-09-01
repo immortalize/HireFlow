@@ -34,6 +34,7 @@ model User {
   crmPartners       CRMPartner[]         @relation("CRMPartnerAssignedTo")
   invitedUsers      UserInvitation[]     @relation("Inviter")
   receivedInvites   UserInvitation[]     @relation("Invitee")
+  createdPipelines  HiringPipeline[]     @relation("PipelineCreator")
 
   @@map("users")
 }
@@ -231,6 +232,84 @@ model UserInvitation {
   @@map("user_invitations")
 }
 
+model HiringPipeline {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  companyId   String
+  createdById String
+  isActive    Boolean  @default(true)
+  token       String   @unique
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  company     Company              @relation(fields: [companyId], references: [id])
+  createdBy   User                 @relation("PipelineCreator", fields: [createdById], references: [id])
+  assessments PipelineAssessment[]
+  candidates  PipelineCandidate[]
+
+  @@map("hiring_pipelines")
+}
+
+model PipelineAssessment {
+  id              String   @id @default(cuid())
+  pipelineId      String
+  type            AssessmentType
+  order           Int
+  timeLimit       Int?     // in minutes
+  isRequired      Boolean  @default(true)
+  questionsBank   Json
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  pipeline        HiringPipeline     @relation(fields: [pipelineId], references: [id])
+  results         PipelineResult[]
+
+  @@map("pipeline_assessments")
+}
+
+model PipelineCandidate {
+  id          String   @id @default(cuid())
+  pipelineId  String
+  email       String
+  firstName   String
+  lastName    String
+  status      CandidateStatus @default(INVITED)
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  pipeline    HiringPipeline @relation(fields: [pipelineId], references: [id])
+  results     PipelineResult[]
+
+  @@unique([pipelineId, email])
+  @@map("pipeline_candidates")
+}
+
+model PipelineResult {
+  id                String   @id @default(cuid())
+  pipelineId        String
+  candidateId       String
+  assessmentId      String
+  score             Float?
+  answers           Json
+  timeSpent         Int?     // in seconds
+  completedAt       DateTime @default(now())
+  createdAt         DateTime @default(now())
+
+  // Relations
+  pipeline          HiringPipeline     @relation(fields: [pipelineId], references: [id])
+  candidate         PipelineCandidate  @relation(fields: [candidateId], references: [id])
+  assessment        PipelineAssessment @relation(fields: [assessmentId], references: [id])
+
+  @@map("pipeline_results")
+}
+
 // Enums
 enum UserRole {
   EMPLOYER
@@ -298,4 +377,12 @@ enum JobType {
   PART_TIME
   CONTRACT
   INTERNSHIP
+}
+
+enum CandidateStatus {
+  INVITED
+  STARTED
+  IN_PROGRESS
+  COMPLETED
+  EXPIRED
 }
