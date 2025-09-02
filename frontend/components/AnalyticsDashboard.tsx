@@ -183,7 +183,7 @@ export default function AnalyticsDashboard({ analytics, assessment }: AnalyticsD
             <div className="text-center">
               <p className="text-3xl font-bold text-yellow-600">
                 {analytics.timeEfficiency.length > 0 
-                  ? Math.round(analytics.timeEfficiency.reduce((a, b) => a + b, 0) / analytics.timeEfficiency.length)
+                  ? Math.round(analytics.timeEfficiency.reduce((a: number, b: number) => a + b, 0) / analytics.timeEfficiency.length)
                   : 0}%
               </p>
               <p className="text-sm text-gray-600 mt-2">

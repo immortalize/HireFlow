@@ -36,9 +36,9 @@ export default function HomePage() {
             <Link href="/auth/login" className="text-gray-600 hover:text-gray-900 transition-colors">
               Login
             </Link>
-            <Button asChild>
-              <Link href="/auth/register">Get Started</Link>
-            </Button>
+            <Link href="/auth/register" className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-primary-600 text-white hover:bg-primary-700 h-10 px-4 py-2">
+              Get Started
+            </Link>
           </nav>
         </div>
       </header>
@@ -60,17 +60,13 @@ export default function HomePage() {
             onboarding, and training in one powerful solution.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" asChild>
-              <Link href="/auth/register">
-                Start Free Trial
-                <ArrowRight className="ml-2 w-4 h-4" />
-              </Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link href="#demo">
-                Watch Demo
-              </Link>
-            </Button>
+            <Link href="/auth/register" className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-primary-600 text-white hover:bg-primary-700 h-12 px-8 text-base">
+              Start Free Trial
+              <ArrowRight className="ml-2 w-4 h-4" />
+            </Link>
+            <Link href="#demo" className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background border border-secondary-300 bg-transparent hover:bg-secondary-50 h-12 px-8 text-base">
+              Watch Demo
+            </Link>
           </div>
         </div>
       </section>
@@ -286,17 +282,13 @@ export default function HomePage() {
             Join hundreds of companies already using HireFlow to build better teams.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" asChild>
-              <Link href="/auth/register">
-                Start Free Trial
-                <CheckCircle className="ml-2 w-4 h-4" />
-              </Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link href="/auth/login">
-                Sign In
-              </Link>
-            </Button>
+            <Link href="/auth/register" className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-primary-600 text-white hover:bg-primary-700 h-12 px-8 text-base">
+              Start Free Trial
+              <CheckCircle className="ml-2 w-4 h-4" />
+            </Link>
+            <Link href="/auth/login" className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background border border-secondary-300 bg-transparent hover:bg-secondary-50 h-12 px-8 text-base">
+              Sign In
+            </Link>
           </div>
         </div>
       </section>

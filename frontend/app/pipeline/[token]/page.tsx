@@ -82,6 +82,7 @@ interface StartPipelineData {
 }
 
 interface SubmitAssessmentData {
+  candidateId: string
   answers: number[]
   timeSpent: number
 }
