@@ -422,7 +422,52 @@ router.get('/:id/results', authenticateToken, requireRole(['EMPLOYER', 'HR_MANAG
       orderBy: { completedAt: 'desc' }
     })
 
-    res.json({ results })
+    // Calculate analytics
+    const analytics = {
+      totalCandidates: results.length,
+      averageScore: results.length > 0 ? Math.round(results.reduce((sum, r) => sum + r.score, 0) / results.length) : 0,
+      highestScore: results.length > 0 ? Math.max(...results.map(r => r.score)) : 0,
+      lowestScore: results.length > 0 ? Math.min(...results.map(r => r.score)) : 0,
+      averageTimeSpent: results.length > 0 ? Math.round(results.reduce((sum, r) => sum + r.timeSpent, 0) / results.length) : 0,
+      completionRate: results.length > 0 ? 100 : 0, // All results are completed
+      scoreDistribution: {
+        excellent: results.filter(r => r.score >= 80).length,
+        good: results.filter(r => r.score >= 60 && r.score < 80).length,
+        fair: results.filter(r => r.score >= 40 && r.score < 60).length,
+        poor: results.filter(r => r.score < 40).length
+      },
+      timeEfficiency: results.map(r => {
+        const timeLimit = assessment.timeLimit * 60 // Convert to seconds
+        return Math.round(Math.max(0, 100 - ((r.timeSpent / timeLimit) * 100)))
+      }),
+      proctoringIssues: results.filter(r => {
+        const proctoringData = r.proctoringData || []
+        return proctoringData.length > 0 && proctoringData.some((event) => {
+          // Add logic to detect suspicious behavior
+          return false // Placeholder
+        })
+      }).length
+    }
+
+    res.json({ 
+      results,
+      analytics,
+      assessment: {
+        id: assessment.id,
+        type: assessment.type,
+        timeLimit: assessment.timeLimit,
+        status: assessment.status,
+        createdAt: assessment.createdAt,
+        application: {
+          job: {
+            title: assessment.application.job.title,
+            company: {
+              name: assessment.application.job.company.name
+            }
+          }
+        }
+      }
+    })
   } catch (error) {
     console.error('Error fetching assessment results:', error)
     res.status(500).json({ error: 'Failed to fetch assessment results' })
