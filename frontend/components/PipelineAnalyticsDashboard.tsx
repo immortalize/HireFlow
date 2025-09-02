@@ -383,15 +383,17 @@ export default function PipelineAnalyticsDashboard({ analytics, pipeline }: Pipe
                          <span>Detailed Assessment Results</span>
                        </h5>
                        <div className="space-y-3">
-                         {candidate.detailedResults.map((result: any, index: number) => (
-                           <div key={index} className="border rounded-lg p-3 bg-gray-50">
-                             <div className="flex items-center justify-between mb-2">
-                               <div className="flex items-center space-x-2">
-                                 {getAssessmentTypeIcon(result.assessmentType)}
-                                 <h6 className="font-medium text-gray-900">
-                                   {result.assessmentType.replace('_', ' ')} Assessment
-                                 </h6>
-                               </div>
+                         {candidate.detailedResults.map((result: any, index: number) => {
+                           const Icon = getAssessmentTypeIcon(result.assessmentType)
+                           return (
+                             <div key={index} className="border rounded-lg p-3 bg-gray-50">
+                               <div className="flex items-center justify-between mb-2">
+                                 <div className="flex items-center space-x-2">
+                                   <Icon className="w-5 h-5 text-gray-600" />
+                                   <h6 className="font-medium text-gray-900">
+                                     {result.assessmentType.replace('_', ' ')} Assessment
+                                   </h6>
+                                 </div>
                                <div className="flex items-center space-x-2">
                                  <Badge className={getScoreBadgeColor(result.score)}>
                                    {result.score}%
