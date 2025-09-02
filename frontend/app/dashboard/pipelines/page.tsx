@@ -22,6 +22,7 @@ import {
   ExternalLink
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { copyToClipboard } from '@/lib/clipboard'
 
 export default function PipelinesPage() {
   const router = useRouter()
@@ -34,15 +35,16 @@ export default function PipelinesPage() {
     select: (data) => data.data?.pipelines || []
   })
 
-  const copyToClipboard = async (token: string) => {
-    try {
-      const url = `${window.location.origin}/pipeline/${token}`
-      await navigator.clipboard.writeText(url)
+  const copyToClipboardHandler = async (token: string) => {
+    const url = `${window.location.origin}/pipeline/${token}`
+    const success = await copyToClipboard(url)
+    
+    if (success) {
       setCopiedToken(token)
       toast.success('Pipeline link copied to clipboard!')
       setTimeout(() => setCopiedToken(null), 2000)
-    } catch (error) {
-      toast.error('Failed to copy link')
+    } else {
+      toast.error('Failed to copy link. Please copy manually: ' + url)
     }
   }
 
@@ -249,7 +251,7 @@ export default function PipelinesPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => copyToClipboard(pipeline.token)}
+                      onClick={() => copyToClipboardHandler(pipeline.token)}
                       className="flex-1"
                     >
                       {copiedToken === pipeline.token ? (

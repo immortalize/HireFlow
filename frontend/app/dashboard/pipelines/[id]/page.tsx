@@ -22,6 +22,7 @@ import {
   Phone
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { copyToClipboard } from '@/lib/clipboard'
 
 export default function PipelineDetailPage() {
   const params = useParams()
@@ -37,17 +38,18 @@ export default function PipelineDetailPage() {
     enabled: !!pipelineId
   })
 
-  const copyToClipboard = async () => {
+  const copyToClipboardHandler = async () => {
     if (!pipeline) return
     
-    try {
-      const url = `${window.location.origin}/pipeline/${pipeline.token}`
-      await navigator.clipboard.writeText(url)
+    const url = `${window.location.origin}/pipeline/${pipeline.token}`
+    const success = await copyToClipboard(url)
+    
+    if (success) {
       setCopiedToken(true)
       toast.success('Pipeline link copied to clipboard!')
       setTimeout(() => setCopiedToken(false), 2000)
-    } catch (error) {
-      toast.error('Failed to copy link')
+    } else {
+      toast.error('Failed to copy link. Please copy manually: ' + url)
     }
   }
 
@@ -154,7 +156,7 @@ export default function PipelineDetailPage() {
             <div className="flex items-center space-x-2">
               <Button
                 variant="outline"
-                onClick={copyToClipboard}
+                                  onClick={copyToClipboardHandler}
               >
                 {copiedToken ? (
                   <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
@@ -391,7 +393,7 @@ export default function PipelineDetailPage() {
                 <div className="flex space-x-2">
                   <Button
                     variant="outline"
-                    onClick={copyToClipboard}
+                    onClick={copyToClipboardHandler}
                     className="flex-1"
                   >
                     {copiedToken ? (
