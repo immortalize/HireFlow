@@ -1,153 +1,14 @@
 const express = require('express')
 const { PrismaClient } = require('@prisma/client')
 const { authenticateToken, requireRole } = require('../middleware/auth')
+const { 
+  selectRandomQuestions, 
+  selectQuestionsByDifficulty, 
+  getQuestionStats 
+} = require('../data/questionBanks')
 
 const router = express.Router()
 const prisma = new PrismaClient()
-
-// Question bank for cognitive ability tests
-const COGNITIVE_QUESTIONS = {
-  logic: [
-    {
-      id: 'logic_1',
-      text: 'If all roses are flowers and some flowers are red, which of the following must be true?',
-      options: [
-        'All roses are red',
-        'Some roses are red',
-        'All red things are roses',
-        'None of the above'
-      ],
-      correctAnswer: 1,
-      category: 'logic'
-    },
-    {
-      id: 'logic_2',
-      text: 'A sequence follows the pattern: 2, 6, 12, 20, 30, ? What comes next?',
-      options: ['40', '42', '44', '46'],
-      correctAnswer: 1,
-      category: 'logic'
-    },
-    {
-      id: 'logic_3',
-      text: 'If A = 1, B = 2, C = 3, then what does CAB equal?',
-      options: ['312', '321', '123', '213'],
-      correctAnswer: 0,
-      category: 'logic'
-    },
-    {
-      id: 'logic_4',
-      text: 'Which figure comes next in the sequence: Circle, Square, Triangle, Circle, Square, ?',
-      options: ['Circle', 'Square', 'Triangle', 'Rectangle'],
-      correctAnswer: 2,
-      category: 'logic'
-    },
-    {
-      id: 'logic_5',
-      text: 'If 3 workers can complete a task in 6 hours, how many hours would it take 2 workers to complete the same task?',
-      options: ['4 hours', '6 hours', '9 hours', '12 hours'],
-      correctAnswer: 2,
-      category: 'logic'
-    }
-  ],
-  math: [
-    {
-      id: 'math_1',
-      text: 'What is 15% of 200?',
-      options: ['20', '25', '30', '35'],
-      correctAnswer: 2,
-      category: 'math'
-    },
-    {
-      id: 'math_2',
-      text: 'If x + 3 = 7, what is x?',
-      options: ['3', '4', '5', '6'],
-      correctAnswer: 1,
-      category: 'math'
-    },
-    {
-      id: 'math_3',
-      text: 'What is the average of 8, 12, 16, and 20?',
-      options: ['12', '14', '16', '18'],
-      correctAnswer: 1,
-      category: 'math'
-    },
-    {
-      id: 'math_4',
-      text: 'If a rectangle has a length of 8 and width of 6, what is its area?',
-      options: ['14', '28', '48', '56'],
-      correctAnswer: 2,
-      category: 'math'
-    },
-    {
-      id: 'math_5',
-      text: 'What is 2^3 × 3^2?',
-      options: ['36', '54', '72', '108'],
-      correctAnswer: 2,
-      category: 'math'
-    }
-  ],
-  verbal: [
-    {
-      id: 'verbal_1',
-      text: 'Choose the word that best completes the analogy: Book is to Reading as Fork is to:',
-      options: ['Eating', 'Cooking', 'Kitchen', 'Food'],
-      correctAnswer: 0,
-      category: 'verbal'
-    },
-    {
-      id: 'verbal_2',
-      text: 'Which word is most similar in meaning to "Eloquent"?',
-      options: ['Quiet', 'Articulate', 'Fast', 'Loud'],
-      correctAnswer: 1,
-      category: 'verbal'
-    },
-    {
-      id: 'verbal_3',
-      text: 'Complete the sentence: "The weather was so _____ that we decided to stay indoors."',
-      options: ['pleasant', 'inclement', 'warm', 'sunny'],
-      correctAnswer: 1,
-      category: 'verbal'
-    },
-    {
-      id: 'verbal_4',
-      text: 'What is the opposite of "Benevolent"?',
-      options: ['Kind', 'Generous', 'Malevolent', 'Friendly'],
-      correctAnswer: 2,
-      category: 'verbal'
-    },
-    {
-      id: 'verbal_5',
-      text: 'Which word does not belong with the others?',
-      options: ['Apple', 'Orange', 'Banana', 'Carrot'],
-      correctAnswer: 3,
-      category: 'verbal'
-    }
-  ]
-}
-
-// Helper function to shuffle array
-function shuffleArray(array) {
-  const shuffled = [...array]
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-  }
-  return shuffled
-}
-
-// Helper function to select random questions
-function selectRandomQuestions(type, count = 25) {
-  const allQuestions = []
-  
-  // Add questions from each category
-  Object.values(COGNITIVE_QUESTIONS).forEach(category => {
-    allQuestions.push(...category)
-  })
-  
-  // Shuffle and select the specified number
-  const shuffled = shuffleArray(allQuestions)
-  return shuffled.slice(0, count)
-}
 
 // Get all assessments (for employers)
 router.get('/', authenticateToken, requireRole(['EMPLOYER', 'HR_MANAGER', 'HIRING_MANAGER']), async (req, res) => {
@@ -338,62 +199,24 @@ router.post('/create', authenticateToken, requireRole(['EMPLOYER', 'HR_MANAGER',
         timeLimit: timeLimit * 60 // Convert to seconds
       }
     } else if (type === 'ENGLISH') {
+      const selectedQuestions = selectRandomQuestions('ENGLISH', 10)
       questionsBank = {
-        questions: [
-          {
-            id: 1,
-            type: 'grammar',
-            question: 'Choose the correct form: "She _____ to the store yesterday."',
-            options: ['go', 'goes', 'went', 'going'],
-            correctAnswer: 2
-          },
-          {
-            id: 2,
-            type: 'vocabulary',
-            question: 'What is the meaning of "ubiquitous"?',
-            options: ['rare', 'common', 'expensive', 'difficult'],
-            correctAnswer: 1
-          }
-        ],
-        totalQuestions: 2,
+        questions: selectedQuestions,
+        totalQuestions: selectedQuestions.length,
         timeLimit: timeLimit * 60
       }
     } else if (type === 'SITUATIONAL_JUDGMENT') {
+      const selectedQuestions = selectRandomQuestions('SITUATIONAL_JUDGMENT', 8)
       questionsBank = {
-        questions: [
-          {
-            id: 1,
-            type: 'scenario',
-            question: 'A team member consistently misses deadlines. How would you handle this?',
-            options: [
-              'Immediately report them to HR',
-              'Have a private conversation to understand the issue',
-              'Ignore the problem',
-              'Take over their work'
-            ],
-            correctAnswer: 1
-          }
-        ],
-        totalQuestions: 1,
+        questions: selectedQuestions,
+        totalQuestions: selectedQuestions.length,
         timeLimit: timeLimit * 60
       }
     } else if (type === 'FIT_CHECK') {
+      const selectedQuestions = selectRandomQuestions('FIT_CHECK', 5)
       questionsBank = {
-        questions: [
-          {
-            id: 1,
-            type: 'preference',
-            question: 'How do you prefer to work?',
-            options: [
-              'Independently',
-              'In small teams',
-              'In large teams',
-              'Mixed approach'
-            ],
-            correctAnswer: null // No correct answer for fit questions
-          }
-        ],
-        totalQuestions: 1,
+        questions: selectedQuestions,
+        totalQuestions: selectedQuestions.length,
         timeLimit: timeLimit * 60
       }
     }

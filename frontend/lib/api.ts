@@ -127,3 +127,10 @@ export const pipelinesAPI = {
   getCandidateProgress: (token: string, candidateId: string) => 
     api.get(`/pipelines/token/${token}/candidate/${candidateId}`),
 }
+
+export const questionBanksAPI = {
+  getStats: () => api.get('/question-banks/stats'),
+  getQuestions: (type: string, params?: any) => api.get(`/question-banks/questions/${type}`, { params }),
+  getCategories: () => api.get('/question-banks/categories'),
+  getDifficulties: () => api.get('/question-banks/difficulties'),
+}

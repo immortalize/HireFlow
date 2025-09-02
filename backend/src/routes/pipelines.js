@@ -3,6 +3,11 @@ const { body, validationResult } = require('express-validator');
 const { PrismaClient } = require('@prisma/client');
 const { authenticateToken, requireRole, requireCompanyAccess } = require('../middleware/auth');
 const crypto = require('crypto');
+const { 
+  selectRandomQuestions, 
+  selectQuestionsByDifficulty, 
+  getQuestionStats 
+} = require('../data/questionBanks');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -10,72 +15,6 @@ const prisma = new PrismaClient();
 // Helper function to generate unique token
 function generateToken() {
   return crypto.randomBytes(32).toString('hex');
-}
-
-// Helper function to select random questions (reuse from assessments.js)
-const COGNITIVE_QUESTIONS = {
-  logic: [
-    {
-      id: 1,
-      question: 'Complete the sequence: 2, 4, 8, 16, __',
-      options: ['24', '32', '30', '28'],
-      correctAnswer: 1
-    },
-    {
-      id: 2,
-      question: 'If all Bloops are Razzles and all Razzles are Lazzles, then all Bloops are definitely Lazzles.',
-      options: ['True', 'False', 'Cannot be determined'],
-      correctAnswer: 0
-    }
-  ],
-  math: [
-    {
-      id: 3,
-      question: 'What is 15% of 200?',
-      options: ['20', '25', '30', '35'],
-      correctAnswer: 2
-    },
-    {
-      id: 4,
-      question: 'If a train travels 120 miles in 2 hours, what is its speed in miles per hour?',
-      options: ['40', '50', '60', '70'],
-      correctAnswer: 2
-    }
-  ],
-  verbal: [
-    {
-      id: 5,
-      question: 'Choose the word that best completes the sentence: The weather was so _____ that we decided to stay indoors.',
-      options: ['pleasant', 'terrible', 'mild', 'warm'],
-      correctAnswer: 1
-    },
-    {
-      id: 6,
-      question: 'What is the opposite of "ubiquitous"?',
-      options: ['rare', 'common', 'expensive', 'difficult'],
-      correctAnswer: 0
-    }
-  ]
-};
-
-function shuffleArray(array) {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-}
-
-function selectRandomQuestions(type, count = 25) {
-  const allQuestions = [];
-  
-  Object.values(COGNITIVE_QUESTIONS).forEach(category => {
-    allQuestions.push(...category);
-  });
-  
-  const shuffled = shuffleArray(allQuestions);
-  return shuffled.slice(0, count);
 }
 
 // Get all pipelines for company
@@ -205,63 +144,25 @@ router.post('/', [
                 timeLimit: (assessment.timeLimit || 30) * 60
               };
             } else if (assessment.type === 'ENGLISH') {
+              const selectedQuestions = selectRandomQuestions('ENGLISH', 10);
               questionsBank = {
-                questions: [
-                  {
-                    id: 1,
-                    type: 'grammar',
-                    question: 'Choose the correct form: "She _____ to the store yesterday."',
-                    options: ['go', 'goes', 'went', 'going'],
-                    correctAnswer: 2
-                  },
-                  {
-                    id: 2,
-                    type: 'vocabulary',
-                    question: 'What is the meaning of "ubiquitous"?',
-                    options: ['rare', 'common', 'expensive', 'difficult'],
-                    correctAnswer: 1
-                  }
-                ],
-                totalQuestions: 2,
-                timeLimit: (assessment.timeLimit || 30) * 60
+                questions: selectedQuestions,
+                totalQuestions: selectedQuestions.length,
+                timeLimit: (assessment.timeLimit || 20) * 60
               };
             } else if (assessment.type === 'SITUATIONAL_JUDGMENT') {
+              const selectedQuestions = selectRandomQuestions('SITUATIONAL_JUDGMENT', 8);
               questionsBank = {
-                questions: [
-                  {
-                    id: 1,
-                    type: 'scenario',
-                    question: 'A team member consistently misses deadlines. How would you handle this?',
-                    options: [
-                      'Immediately report them to HR',
-                      'Have a private conversation to understand the issue',
-                      'Ignore the problem',
-                      'Take over their work'
-                    ],
-                    correctAnswer: 1
-                  }
-                ],
-                totalQuestions: 1,
-                timeLimit: (assessment.timeLimit || 30) * 60
+                questions: selectedQuestions,
+                totalQuestions: selectedQuestions.length,
+                timeLimit: (assessment.timeLimit || 15) * 60
               };
             } else if (assessment.type === 'FIT_CHECK') {
+              const selectedQuestions = selectRandomQuestions('FIT_CHECK', 5);
               questionsBank = {
-                questions: [
-                  {
-                    id: 1,
-                    type: 'preference',
-                    question: 'How do you prefer to work?',
-                    options: [
-                      'Independently',
-                      'In small teams',
-                      'In large teams',
-                      'Mixed approach'
-                    ],
-                    correctAnswer: null
-                  }
-                ],
-                totalQuestions: 1,
-                timeLimit: (assessment.timeLimit || 30) * 60
+                questions: selectedQuestions,
+                totalQuestions: selectedQuestions.length,
+                timeLimit: (assessment.timeLimit || 10) * 60
               };
             }
 

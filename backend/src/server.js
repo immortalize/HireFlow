@@ -13,6 +13,7 @@ const crmRoutes = require('./routes/crm');
 const onboardingRoutes = require('./routes/onboarding');
 const userRoutes = require('./routes/users');
 const pipelineRoutes = require('./routes/pipelines');
+const questionBankRoutes = require('./routes/questionBanks');
 const { authenticateToken } = require('./middleware/auth');
 
 const app = express();
@@ -59,6 +60,7 @@ app.use('/api/crm', authenticateToken, crmRoutes);
 app.use('/api/onboarding', authenticateToken, onboardingRoutes);
 app.use('/api/users', authenticateToken, userRoutes);
 app.use('/api/pipelines', pipelineRoutes);
+app.use('/api/question-banks', questionBankRoutes);
 
 // Socket.io connection handling
 io.on('connection', (socket) => {

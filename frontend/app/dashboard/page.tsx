@@ -16,7 +16,8 @@ import {
   Settings,
   LogOut,
   User,
-  Link
+  Link,
+  BookOpen
 } from 'lucide-react'
 import { getRoleDisplayName } from '@/lib/utils'
 
@@ -61,6 +62,13 @@ export default function DashboardPage() {
       icon: Link,
       href: '/dashboard/pipelines',
       color: 'bg-teal-100 text-teal-600'
+    },
+    {
+      title: 'Question Banks',
+      description: 'Manage assessment question banks',
+      icon: BookOpen,
+      href: '/dashboard/question-banks',
+      color: 'bg-indigo-100 text-indigo-600'
     },
     {
       title: 'Assessments',
