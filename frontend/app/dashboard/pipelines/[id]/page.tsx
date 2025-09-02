@@ -396,6 +396,14 @@ export default function PipelineDetailPage() {
                                     <span className="text-gray-500">
                                       {Math.floor((result.timeSpent || 0) / 60)}m
                                     </span>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => router.push(`/dashboard/pipelines/${pipelineId}/result/${result.id}`)}
+                                      className="text-xs"
+                                    >
+                                      View Details
+                                    </Button>
                                   </div>
                                 </div>
                               ))}
@@ -444,6 +452,16 @@ export default function PipelineDetailPage() {
                                             <span className="text-gray-500">Accuracy:</span>
                                             <span className="font-medium text-blue-600 ml-1">{result.accuracy}%</span>
                                           </div>
+                                        </div>
+                                        <div className="mt-2 flex justify-end">
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => router.push(`/dashboard/pipelines/${pipelineId}/result/${result.resultId}`)}
+                                            className="text-xs"
+                                          >
+                                            View Details
+                                          </Button>
                                         </div>
                                       </div>
                                     ))}

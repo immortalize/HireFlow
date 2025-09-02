@@ -126,6 +126,8 @@ export const pipelinesAPI = {
     api.post(`/pipelines/token/${token}/assessment/${assessmentId}/submit`, data),
   getCandidateProgress: (token: string, candidateId: string) => 
     api.get(`/pipelines/token/${token}/candidate/${candidateId}`),
+  getDetailedResult: (pipelineId: string, resultId: string) => 
+    api.get(`/pipelines/${pipelineId}/result/${resultId}/detailed`),
 }
 
 export const questionBanksAPI = {

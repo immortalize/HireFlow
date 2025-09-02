@@ -277,6 +277,7 @@ router.get('/:id', authenticateToken, requireRole(['EMPLOYER', 'HR_MANAGER', 'HI
         else if (result.score >= 40) performanceLevel = 'fair';
         
         return {
+          resultId: result.id,
           assessmentId: result.assessmentId,
           assessmentType: result.assessment.type,
           score: result.score,
@@ -734,6 +735,109 @@ router.get('/token/:token/candidate/:candidateId', async (req, res) => {
   } catch (error) {
     console.error('Error fetching candidate progress:', error);
     res.status(500).json({ error: 'Failed to fetch candidate progress' });
+  }
+});
+
+// Get detailed assessment result
+router.get('/:pipelineId/result/:resultId/detailed', authenticateToken, requireRole(['EMPLOYER', 'HR_MANAGER', 'HIRING_MANAGER']), requireCompanyAccess, async (req, res) => {
+  try {
+    const { pipelineId, resultId } = req.params;
+
+    // Verify pipeline belongs to company
+    const pipeline = await prisma.hiringPipeline.findFirst({
+      where: {
+        id: pipelineId,
+        companyId: req.user.companyId
+      }
+    });
+
+    if (!pipeline) {
+      return res.status(404).json({ error: 'Pipeline not found' });
+    }
+
+    // Get detailed result with questions and answers
+    const result = await prisma.pipelineResult.findFirst({
+      where: {
+        id: resultId,
+        pipelineId: pipelineId
+      },
+      include: {
+        candidate: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        },
+        assessment: {
+          select: {
+            id: true,
+            type: true,
+            questionsBank: true,
+            timeLimit: true
+          }
+        }
+      }
+    });
+
+    if (!result) {
+      return res.status(404).json({ error: 'Result not found' });
+    }
+
+    // Process questions and answers
+    const questions = result.assessment.questionsBank?.questions || [];
+    const answers = result.answers || [];
+    
+    const detailedQuestions = questions.map((question, index) => {
+      const candidateAnswer = answers[index];
+      const isCorrect = question.correctAnswer !== undefined && candidateAnswer === question.correctAnswer;
+      const isAnswered = candidateAnswer !== null && candidateAnswer !== undefined && candidateAnswer !== '';
+      
+      return {
+        questionNumber: index + 1,
+        question: question.question,
+        options: question.options || [],
+        correctAnswer: question.correctAnswer,
+        candidateAnswer: candidateAnswer,
+        isCorrect: isCorrect,
+        isAnswered: isAnswered,
+        explanation: question.explanation || null
+      };
+    });
+
+    // Calculate detailed statistics
+    const totalQuestions = questions.length;
+    const correctAnswers = detailedQuestions.filter(q => q.isCorrect).length;
+    const wrongAnswers = detailedQuestions.filter(q => q.isAnswered && !q.isCorrect).length;
+    const emptyAnswers = detailedQuestions.filter(q => !q.isAnswered).length;
+    const accuracy = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
+
+    const detailedResult = {
+      id: result.id,
+      candidate: result.candidate,
+      assessment: {
+        id: result.assessment.id,
+        type: result.assessment.type,
+        timeLimit: result.assessment.timeLimit
+      },
+      score: result.score,
+      timeSpent: result.timeSpent,
+      completedAt: result.completedAt,
+      statistics: {
+        totalQuestions,
+        correctAnswers,
+        wrongAnswers,
+        emptyAnswers,
+        accuracy
+      },
+      questions: detailedQuestions
+    };
+
+    res.json({ result: detailedResult });
+  } catch (error) {
+    console.error('Error fetching detailed result:', error);
+    res.status(500).json({ error: 'Failed to fetch detailed result' });
   }
 });
 

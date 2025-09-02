@@ -25,56 +25,57 @@ model User {
   updatedAt    DateTime @updatedAt
 
   // Relations
-  company           Company?             @relation(fields: [companyId], references: [id])
-  createdJobs       Job[]                @relation("JobCreator")
-  applications      Application[]
-  assessmentResults AssessmentResult[]
+  company            Company?             @relation(fields: [companyId], references: [id])
+  createdJobs        Job[]                @relation("JobCreator")
+  applications       Application[]
+  assessmentResults  AssessmentResult[]
   onboardingProgress OnboardingProgress[]
-  crmLeads          CRMLead[]            @relation("CRMLeadAssignedTo")
-  crmPartners       CRMPartner[]         @relation("CRMPartnerAssignedTo")
-  invitedUsers      UserInvitation[]     @relation("Inviter")
-  receivedInvites   UserInvitation[]     @relation("Invitee")
-  createdPipelines  HiringPipeline[]     @relation("PipelineCreator")
+  crmLeads           CRMLead[]            @relation("CRMLeadAssignedTo")
+  crmPartners        CRMPartner[]         @relation("CRMPartnerAssignedTo")
+  invitedUsers       UserInvitation[]     @relation("Inviter")
+  receivedInvites    UserInvitation[]     @relation("Invitee")
+  createdPipelines   HiringPipeline[]     @relation("PipelineCreator")
 
   @@map("users")
 }
 
 model Company {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  logo        String?
-  primaryColor String?  @default("#3B82F6")
-  secondaryColor String? @default("#1E40AF")
-  website     String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(cuid())
+  name           String
+  description    String?
+  logo           String?
+  primaryColor   String?  @default("#3B82F6")
+  secondaryColor String?  @default("#1E40AF")
+  website        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   // Relations
-  users              User[]
-  jobs               Job[]
-  crmLeads           CRMLead[]
-  crmPartners        CRMPartner[]
-  onboardingModules  OnboardingModule[]
+  users             User[]
+  jobs              Job[]
+  crmLeads          CRMLead[]
+  crmPartners       CRMPartner[]
+  onboardingModules OnboardingModule[]
+  HiringPipeline    HiringPipeline[]
 
   @@map("companies")
 }
 
 model Job {
-  id          String   @id @default(cuid())
-  title       String
-  description String
+  id           String   @id @default(cuid())
+  title        String
+  description  String
   requirements String?
-  benefits    String?
-  location    String?
-  type        JobType  @default(FULL_TIME)
-  salaryMin   Int?
-  salaryMax   Int?
-  isActive    Boolean  @default(true)
-  companyId   String
-  createdById String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  benefits     String?
+  location     String?
+  type         JobType  @default(FULL_TIME)
+  salaryMin    Int?
+  salaryMax    Int?
+  isActive     Boolean  @default(true)
+  companyId    String
+  createdById  String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Relations
   company      Company       @relation(fields: [companyId], references: [id])
@@ -85,51 +86,51 @@ model Job {
 }
 
 model Application {
-  id                      String              @id @default(cuid())
-  candidateId             String
-  jobId                   String
-  status                  ApplicationStatus   @default(APPLIED)
+  id                        String            @id @default(cuid())
+  candidateId               String
+  jobId                     String
+  status                    ApplicationStatus @default(APPLIED)
   fitQuestionnaireResponses Json?
-  coverLetter             String?
-  resume                  String?
-  createdAt               DateTime            @default(now())
-  updatedAt               DateTime            @updatedAt
+  coverLetter               String?
+  resume                    String?
+  createdAt                 DateTime          @default(now())
+  updatedAt                 DateTime          @updatedAt
 
   // Relations
-  candidate         User                @relation(fields: [candidateId], references: [id])
-  job               Job                 @relation(fields: [jobId], references: [id])
-  assessments       Assessment[]
+  candidate   User         @relation(fields: [candidateId], references: [id])
+  job         Job          @relation(fields: [jobId], references: [id])
+  assessments Assessment[]
 
   @@map("applications")
 }
 
 model Assessment {
-  id            String        @id @default(cuid())
+  id            String         @id @default(cuid())
   type          AssessmentType
   questionsBank Json
   applicationId String
-  timeLimit     Int?          // in minutes
-  isActive      Boolean       @default(true)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  timeLimit     Int? // in minutes
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
   // Relations
-  application        Application        @relation(fields: [applicationId], references: [id])
-  assessmentResults  AssessmentResult[]
+  application       Application        @relation(fields: [applicationId], references: [id])
+  assessmentResults AssessmentResult[]
 
   @@map("assessments")
 }
 
 model AssessmentResult {
-  id              String   @id @default(cuid())
-  assessmentId    String
-  candidateId     String
-  score           Float?
-  answers         Json
-  proctoringData  Json?
-  timeSpent       Int?     // in seconds
-  completedAt     DateTime @default(now())
-  createdAt       DateTime @default(now())
+  id             String   @id @default(cuid())
+  assessmentId   String
+  candidateId    String
+  score          Float?
+  answers        Json
+  proctoringData Json?
+  timeSpent      Int? // in seconds
+  completedAt    DateTime @default(now())
+  createdAt      DateTime @default(now())
 
   // Relations
   assessment Assessment @relation(fields: [assessmentId], references: [id])
@@ -139,17 +140,17 @@ model AssessmentResult {
 }
 
 model CRMLead {
-  id        String     @id @default(cuid())
-  name      String
-  email     String
-  phone     String?
-  status    LeadStatus @default(NEW)
-  source    String?
-  notes     String?
+  id           String     @id @default(cuid())
+  name         String
+  email        String
+  phone        String?
+  status       LeadStatus @default(NEW)
+  source       String?
+  notes        String?
   assignedToId String?
-  companyId String
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  companyId    String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
   // Relations
   assignedTo User?   @relation("CRMLeadAssignedTo", fields: [assignedToId], references: [id])
@@ -159,17 +160,17 @@ model CRMLead {
 }
 
 model CRMPartner {
-  id        String   @id @default(cuid())
-  name      String
-  email     String
-  phone     String?
-  type      PartnerType
-  status    PartnerStatus @default(ACTIVE)
-  notes     String?
+  id           String        @id @default(cuid())
+  name         String
+  email        String
+  phone        String?
+  type         PartnerType
+  status       PartnerStatus @default(ACTIVE)
+  notes        String?
   assignedToId String?
-  companyId String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  companyId    String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
   // Relations
   assignedTo User?   @relation("CRMPartnerAssignedTo", fields: [assignedToId], references: [id])
@@ -179,31 +180,31 @@ model CRMPartner {
 }
 
 model OnboardingModule {
-  id          String   @id @default(cuid())
+  id          String      @id @default(cuid())
   title       String
   content     String
   contentType ContentType
   order       Int
   companyId   String
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
   // Relations
-  company             Company              @relation(fields: [companyId], references: [id])
-  onboardingProgress  OnboardingProgress[]
+  company            Company              @relation(fields: [companyId], references: [id])
+  onboardingProgress OnboardingProgress[]
 
   @@map("onboarding_modules")
 }
 
 model OnboardingProgress {
-  id         String   @id @default(cuid())
-  userId     String
-  moduleId   String
-  status     ProgressStatus @default(NOT_STARTED)
+  id          String         @id @default(cuid())
+  userId      String
+  moduleId    String
+  status      ProgressStatus @default(NOT_STARTED)
   completedAt DateTime?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 
   // Relations
   user   User             @relation(fields: [userId], references: [id])
@@ -214,16 +215,16 @@ model OnboardingProgress {
 }
 
 model UserInvitation {
-  id        String   @id @default(cuid())
-  email     String
-  role      UserRole
-  companyId String
-  inviterId String
-  inviteeId String?
-  token     String   @unique
-  expiresAt DateTime
+  id         String    @id @default(cuid())
+  email      String
+  role       UserRole
+  companyId  String
+  inviterId  String
+  inviteeId  String?
+  token      String    @unique
+  expiresAt  DateTime
   acceptedAt DateTime?
-  createdAt DateTime @default(now())
+  createdAt  DateTime  @default(now())
 
   // Relations
   inviter User? @relation("Inviter", fields: [inviterId], references: [id])
@@ -233,46 +234,47 @@ model UserInvitation {
 }
 
 model HiringPipeline {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   name        String
   description String?
   companyId   String
   createdById String
-  isActive    Boolean  @default(true)
-  token       String   @unique
+  isActive    Boolean   @default(true)
+  token       String    @unique
   expiresAt   DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   // Relations
-  company     Company              @relation(fields: [companyId], references: [id])
-  createdBy   User                 @relation("PipelineCreator", fields: [createdById], references: [id])
-  assessments PipelineAssessment[]
-  candidates  PipelineCandidate[]
+  company        Company              @relation(fields: [companyId], references: [id])
+  createdBy      User                 @relation("PipelineCreator", fields: [createdById], references: [id])
+  assessments    PipelineAssessment[]
+  candidates     PipelineCandidate[]
+  PipelineResult PipelineResult[]
 
   @@map("hiring_pipelines")
 }
 
 model PipelineAssessment {
-  id              String   @id @default(cuid())
-  pipelineId      String
-  type            AssessmentType
-  order           Int
-  timeLimit       Int?     // in minutes
-  isRequired      Boolean  @default(true)
-  questionsBank   Json
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id            String         @id @default(cuid())
+  pipelineId    String
+  type          AssessmentType
+  order         Int
+  timeLimit     Int? // in minutes
+  isRequired    Boolean        @default(true)
+  questionsBank Json
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
   // Relations
-  pipeline        HiringPipeline     @relation(fields: [pipelineId], references: [id])
-  results         PipelineResult[]
+  pipeline HiringPipeline   @relation(fields: [pipelineId], references: [id])
+  results  PipelineResult[]
 
   @@map("pipeline_assessments")
 }
 
 model PipelineCandidate {
-  id          String   @id @default(cuid())
+  id          String          @id @default(cuid())
   pipelineId  String
   email       String
   firstName   String
@@ -280,32 +282,32 @@ model PipelineCandidate {
   status      CandidateStatus @default(INVITED)
   startedAt   DateTime?
   completedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 
   // Relations
-  pipeline    HiringPipeline @relation(fields: [pipelineId], references: [id])
-  results     PipelineResult[]
+  pipeline HiringPipeline   @relation(fields: [pipelineId], references: [id])
+  results  PipelineResult[]
 
   @@unique([pipelineId, email])
   @@map("pipeline_candidates")
 }
 
 model PipelineResult {
-  id                String   @id @default(cuid())
-  pipelineId        String
-  candidateId       String
-  assessmentId      String
-  score             Float?
-  answers           Json
-  timeSpent         Int?     // in seconds
-  completedAt       DateTime @default(now())
-  createdAt         DateTime @default(now())
+  id           String   @id @default(cuid())
+  pipelineId   String
+  candidateId  String
+  assessmentId String
+  score        Float?
+  answers      Json
+  timeSpent    Int? // in seconds
+  completedAt  DateTime @default(now())
+  createdAt    DateTime @default(now())
 
   // Relations
-  pipeline          HiringPipeline     @relation(fields: [pipelineId], references: [id])
-  candidate         PipelineCandidate  @relation(fields: [candidateId], references: [id])
-  assessment        PipelineAssessment @relation(fields: [assessmentId], references: [id])
+  pipeline   HiringPipeline     @relation(fields: [pipelineId], references: [id])
+  candidate  PipelineCandidate  @relation(fields: [candidateId], references: [id])
+  assessment PipelineAssessment @relation(fields: [assessmentId], references: [id])
 
   @@map("pipeline_results")
 }

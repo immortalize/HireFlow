@@ -1,7 +1,9 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { 
   BarChart3, 
   TrendingUp, 
@@ -19,7 +21,8 @@ import {
   User,
   Star,
   Lightbulb,
-  XCircle
+  XCircle,
+  Eye
 } from 'lucide-react'
 
 interface PipelineAnalyticsProps {
@@ -28,6 +31,7 @@ interface PipelineAnalyticsProps {
 }
 
 export default function PipelineAnalyticsDashboard({ analytics, pipeline }: PipelineAnalyticsProps) {
+  const router = useRouter()
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-600'
     if (score >= 60) return 'text-yellow-600'
@@ -444,6 +448,18 @@ export default function PipelineAnalyticsDashboard({ analytics, pipeline }: Pipe
                                     {result.timePerQuestion}s
                                   </p>
                                 </div>
+                              </div>
+                              
+                              <div className="mt-3 flex justify-end">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => router.push(`/dashboard/pipelines/${pipeline.id}/result/${result.resultId}`)}
+                                  className="text-xs"
+                                >
+                                  <Eye className="w-3 h-3 mr-1" />
+                                  View Details
+                                </Button>
                               </div>
                             </div>
                           )
