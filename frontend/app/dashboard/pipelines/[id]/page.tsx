@@ -396,6 +396,58 @@ export default function PipelineDetailPage() {
                             </div>
                           </div>
                         )}
+                        
+                        {/* Detailed Results from Analytics */}
+                        {analytics.candidateFitAnalysis && analytics.candidateFitAnalysis.length > 0 && (
+                          (() => {
+                            const fitData = analytics.candidateFitAnalysis.find((c: any) => c.candidateId === candidate.id)
+                            if (fitData && fitData.detailedResults && fitData.detailedResults.length > 0) {
+                              return (
+                                <div className="mt-3 pt-3 border-t">
+                                  <h5 className="text-sm font-medium text-gray-700 mb-2">Detailed Results</h5>
+                                  <div className="space-y-2">
+                                    {fitData.detailedResults.map((result: any, index: number) => (
+                                      <div key={index} className="bg-gray-50 rounded p-2 text-sm">
+                                        <div className="flex items-center justify-between mb-1">
+                                          <span className="font-medium text-gray-700">
+                                            {result.assessmentType.replace('_', ' ')}
+                                          </span>
+                                          <div className="flex items-center space-x-2">
+                                            <Badge className={getScoreBadgeColor(result.score)}>
+                                              {result.score}%
+                                            </Badge>
+                                            <span className="text-gray-500">
+                                              {Math.floor((result.timeSpent || 0) / 60)}m
+                                            </span>
+                                          </div>
+                                        </div>
+                                        <div className="grid grid-cols-4 gap-2 text-xs">
+                                          <div className="text-center">
+                                            <span className="text-gray-500">Correct:</span>
+                                            <span className="font-medium text-green-600 ml-1">{result.correctAnswers}</span>
+                                          </div>
+                                          <div className="text-center">
+                                            <span className="text-gray-500">Wrong:</span>
+                                            <span className="font-medium text-red-600 ml-1">{result.wrongAnswers}</span>
+                                          </div>
+                                          <div className="text-center">
+                                            <span className="text-gray-500">Empty:</span>
+                                            <span className="font-medium text-yellow-600 ml-1">{result.emptyAnswers}</span>
+                                          </div>
+                                          <div className="text-center">
+                                            <span className="text-gray-500">Accuracy:</span>
+                                            <span className="font-medium text-blue-600 ml-1">{result.accuracy}%</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )
+                            }
+                            return null
+                          })()
+                        )}
                       </div>
                     ))}
                   </div>

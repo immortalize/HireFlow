@@ -321,59 +321,133 @@ export default function PipelineAnalyticsDashboard({ analytics, pipeline }: Pipe
                     </div>
                   </div>
                   
-                  {/* Candidate Insights */}
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                    {candidate.strengths.length > 0 && (
-                      <div>
-                        <h5 className="text-sm font-medium text-gray-700 mb-2 flex items-center space-x-1">
-                          <Lightbulb className="w-4 h-4 text-yellow-500" />
-                          <span>Strengths</span>
-                        </h5>
-                        <ul className="space-y-1">
-                          {candidate.strengths.map((strength: string, index: number) => (
-                            <li key={index} className="text-sm text-gray-600 flex items-start space-x-1">
-                              <CheckCircle className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" />
-                              <span>{strength}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    
-                    {candidate.weaknesses.length > 0 && (
-                      <div>
-                        <h5 className="text-sm font-medium text-gray-700 mb-2 flex items-center space-x-1">
-                          <AlertTriangle className="w-4 h-4 text-orange-500" />
-                          <span>Areas for Improvement</span>
-                        </h5>
-                        <ul className="space-y-1">
-                          {candidate.weaknesses.map((weakness: string, index: number) => (
-                            <li key={index} className="text-sm text-gray-600 flex items-start space-x-1">
-                              <XCircle className="w-3 h-3 text-red-500 mt-0.5 flex-shrink-0" />
-                              <span>{weakness}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    
-                    {candidate.recommendations.length > 0 && (
-                      <div>
-                        <h5 className="text-sm font-medium text-gray-700 mb-2 flex items-center space-x-1">
-                          <Star className="w-4 h-4 text-blue-500" />
-                          <span>Recommendations</span>
-                        </h5>
-                        <ul className="space-y-1">
-                          {candidate.recommendations.map((recommendation: string, index: number) => (
-                            <li key={index} className="text-sm text-gray-600 flex items-start space-x-1">
-                              <Star className="w-3 h-3 text-blue-500 mt-0.5 flex-shrink-0" />
-                              <span>{recommendation}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
+                                     {/* Candidate Insights */}
+                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                     {candidate.strengths.length > 0 && (
+                       <div>
+                         <h5 className="text-sm font-medium text-gray-700 mb-2 flex items-center space-x-1">
+                           <Lightbulb className="w-4 h-4 text-yellow-500" />
+                           <span>Strengths</span>
+                         </h5>
+                         <ul className="space-y-1">
+                           {candidate.strengths.map((strength: string, index: number) => (
+                             <li key={index} className="text-sm text-gray-600 flex items-start space-x-1">
+                               <CheckCircle className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" />
+                               <span>{strength}</span>
+                             </li>
+                           ))}
+                         </ul>
+                       </div>
+                     )}
+                     
+                     {candidate.weaknesses.length > 0 && (
+                       <div>
+                         <h5 className="text-sm font-medium text-gray-700 mb-2 flex items-center space-x-1">
+                           <AlertTriangle className="w-4 h-4 text-orange-500" />
+                           <span>Areas for Improvement</span>
+                         </h5>
+                         <ul className="space-y-1">
+                           {candidate.weaknesses.map((weakness: string, index: number) => (
+                             <li key={index} className="text-sm text-gray-600 flex items-start space-x-1">
+                               <XCircle className="w-3 h-3 text-red-500 mt-0.5 flex-shrink-0" />
+                               <span>{weakness}</span>
+                             </li>
+                           ))}
+                         </ul>
+                       </div>
+                     )}
+                     
+                     {candidate.recommendations.length > 0 && (
+                       <div>
+                         <h5 className="text-sm font-medium text-gray-700 mb-2 flex items-center space-x-1">
+                           <Star className="w-4 h-4 text-blue-500" />
+                           <span>Recommendations</span>
+                         </h5>
+                         <ul className="space-y-1">
+                           {candidate.recommendations.map((recommendation: string, index: number) => (
+                             <li key={index} className="text-sm text-gray-600 flex items-start space-x-1">
+                               <Star className="w-3 h-3 text-blue-500 mt-0.5 flex-shrink-0" />
+                               <span>{recommendation}</span>
+                             </li>
+                           ))}
+                         </ul>
+                       </div>
+                     )}
+                   </div>
+                   
+                   {/* Detailed Assessment Results */}
+                   {candidate.detailedResults && candidate.detailedResults.length > 0 && (
+                     <div className="mt-4 pt-4 border-t">
+                       <h5 className="text-sm font-medium text-gray-700 mb-3 flex items-center space-x-1">
+                         <BarChart3 className="w-4 h-4 text-purple-500" />
+                         <span>Detailed Assessment Results</span>
+                       </h5>
+                       <div className="space-y-3">
+                         {candidate.detailedResults.map((result: any, index: number) => (
+                           <div key={index} className="border rounded-lg p-3 bg-gray-50">
+                             <div className="flex items-center justify-between mb-2">
+                               <div className="flex items-center space-x-2">
+                                 {getAssessmentTypeIcon(result.assessmentType)}
+                                 <h6 className="font-medium text-gray-900">
+                                   {result.assessmentType.replace('_', ' ')} Assessment
+                                 </h6>
+                               </div>
+                               <div className="flex items-center space-x-2">
+                                 <Badge className={getScoreBadgeColor(result.score)}>
+                                   {result.score}%
+                                 </Badge>
+                                 <Badge className="bg-purple-100 text-purple-800">
+                                   {result.performanceLevel.charAt(0).toUpperCase() + result.performanceLevel.slice(1)}
+                                 </Badge>
+                               </div>
+                             </div>
+                             
+                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                               <div className="text-center">
+                                 <p className="text-gray-500">Questions</p>
+                                 <p className="font-medium text-gray-900">{result.totalQuestions}</p>
+                               </div>
+                               <div className="text-center">
+                                 <p className="text-gray-500">Correct</p>
+                                 <p className="font-medium text-green-600">{result.correctAnswers}</p>
+                               </div>
+                               <div className="text-center">
+                                 <p className="text-gray-500">Wrong</p>
+                                 <p className="font-medium text-red-600">{result.wrongAnswers}</p>
+                               </div>
+                               <div className="text-center">
+                                 <p className="text-gray-500">Empty</p>
+                                 <p className="font-medium text-yellow-600">{result.emptyAnswers}</p>
+                               </div>
+                             </div>
+                             
+                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mt-2">
+                               <div className="text-center">
+                                 <p className="text-gray-500">Accuracy</p>
+                                 <p className="font-medium text-blue-600">{result.accuracy}%</p>
+                               </div>
+                               <div className="text-center">
+                                 <p className="text-gray-500">Completion</p>
+                                 <p className="font-medium text-purple-600">{result.completionRate}%</p>
+                               </div>
+                               <div className="text-center">
+                                 <p className="text-gray-500">Time Spent</p>
+                                 <p className="font-medium text-orange-600">
+                                   {Math.floor((result.timeSpent || 0) / 60)}m {(result.timeSpent || 0) % 60}s
+                                 </p>
+                               </div>
+                               <div className="text-center">
+                                 <p className="text-gray-500">Time/Question</p>
+                                 <p className="font-medium text-indigo-600">
+                                   {result.timePerQuestion}s
+                                 </p>
+                               </div>
+                             </div>
+                           </div>
+                         ))}
+                       </div>
+                     </div>
+                   )}
                 </div>
               ))}
             </div>

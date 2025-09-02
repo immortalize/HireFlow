@@ -217,6 +217,63 @@ router.get('/:id', authenticateToken, requireRole(['EMPLOYER', 'HR_MANAGER', 'HI
         recommendations.push('May not be the right fit for this role');
       }
       
+      // Analyze detailed assessment results
+      const detailedResults = results.map(result => {
+        const answers = result.answers || {};
+        const questionAnswers = Array.isArray(answers) ? answers : Object.values(answers);
+        
+        // Calculate detailed metrics
+        let correctAnswers = 0;
+        let wrongAnswers = 0;
+        let emptyAnswers = 0;
+        let totalQuestions = 0;
+        
+        if (Array.isArray(questionAnswers)) {
+          totalQuestions = questionAnswers.length;
+          questionAnswers.forEach(answer => {
+            if (answer === null || answer === undefined || answer === '') {
+              emptyAnswers++;
+            } else if (answer.correct === true) {
+              correctAnswers++;
+            } else if (answer.correct === false) {
+              wrongAnswers++;
+            } else {
+              // For questions where we don't have correctness info, assume answered
+              if (answer.answer !== null && answer.answer !== undefined && answer.answer !== '') {
+                wrongAnswers++; // Conservative assumption
+              } else {
+                emptyAnswers++;
+              }
+            }
+          });
+        }
+        
+        // Calculate time per question
+        const timePerQuestion = totalQuestions > 0 ? Math.round((result.timeSpent || 0) / totalQuestions) : 0;
+        
+        // Determine performance level
+        let performanceLevel = 'poor';
+        if (result.score >= 80) performanceLevel = 'excellent';
+        else if (result.score >= 60) performanceLevel = 'good';
+        else if (result.score >= 40) performanceLevel = 'fair';
+        
+        return {
+          assessmentId: result.assessmentId,
+          assessmentType: result.assessment.type,
+          score: result.score,
+          timeSpent: result.timeSpent,
+          timePerQuestion,
+          completedAt: result.completedAt,
+          totalQuestions,
+          correctAnswers,
+          wrongAnswers,
+          emptyAnswers,
+          performanceLevel,
+          accuracy: totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0,
+          completionRate: totalQuestions > 0 ? Math.round(((correctAnswers + wrongAnswers) / totalQuestions) * 100) : 0
+        };
+      });
+      
       return {
         candidateId: candidate.id,
         candidateName: `${candidate.firstName} ${candidate.lastName}`,
@@ -231,12 +288,7 @@ router.get('/:id', authenticateToken, requireRole(['EMPLOYER', 'HR_MANAGER', 'HI
         recommendations,
         completedAssessments,
         totalAssessments,
-        results: results.map(r => ({
-          assessmentType: r.assessment.type,
-          score: r.score,
-          timeSpent: r.timeSpent,
-          completedAt: r.completedAt
-        }))
+        detailedResults
       };
     });
 
