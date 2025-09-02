@@ -78,6 +78,12 @@ export default function PipelineDetailPage() {
     return 'text-red-600'
   }
 
+  const getScoreBadgeColor = (score: number) => {
+    if (score >= 80) return 'bg-green-100 text-green-800'
+    if (score >= 60) return 'bg-yellow-100 text-yellow-800'
+    return 'bg-red-100 text-red-800'
+  }
+
   const getFitBadgeColor = (fit: string) => {
     switch (fit) {
       case 'excellent': return 'bg-green-100 text-green-800'
