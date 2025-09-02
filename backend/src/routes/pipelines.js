@@ -92,7 +92,171 @@ router.get('/:id', authenticateToken, requireRole(['EMPLOYER', 'HR_MANAGER', 'HI
       return res.status(404).json({ error: 'Pipeline not found' });
     }
 
-    res.json({ pipeline });
+    // Calculate analytics
+    const analytics = {
+      totalCandidates: pipeline.candidates.length,
+      completedCandidates: pipeline.candidates.filter(c => c.status === 'COMPLETED').length,
+      inProgressCandidates: pipeline.candidates.filter(c => c.status === 'IN_PROGRESS').length,
+      startedCandidates: pipeline.candidates.filter(c => c.status === 'STARTED').length,
+      invitedCandidates: pipeline.candidates.filter(c => c.status === 'INVITED').length,
+      completionRate: pipeline.candidates.length > 0 
+        ? Math.round((pipeline.candidates.filter(c => c.status === 'COMPLETED').length / pipeline.candidates.length) * 100)
+        : 0,
+      averageTimeToComplete: 0,
+      scoreDistribution: {
+        excellent: 0,
+        good: 0,
+        fair: 0,
+        poor: 0
+      },
+      assessmentAnalytics: {},
+      candidateFitAnalysis: []
+    };
+
+    // Calculate assessment-specific analytics
+    pipeline.assessments.forEach(assessment => {
+      const assessmentResults = pipeline.candidates
+        .flatMap(c => c.results)
+        .filter(r => r.assessmentId === assessment.id);
+
+      if (assessmentResults.length > 0) {
+        const scores = assessmentResults.map(r => r.score).filter(s => s !== null);
+        const averageScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+        const highestScore = scores.length > 0 ? Math.max(...scores) : 0;
+        const lowestScore = scores.length > 0 ? Math.min(...scores) : 0;
+
+        analytics.assessmentAnalytics[assessment.id] = {
+          type: assessment.type,
+          totalAttempts: assessmentResults.length,
+          averageScore,
+          highestScore,
+          lowestScore,
+          scoreDistribution: {
+            excellent: scores.filter(s => s >= 80).length,
+            good: scores.filter(s => s >= 60 && s < 80).length,
+            fair: scores.filter(s => s >= 40 && s < 60).length,
+            poor: scores.filter(s => s < 40).length
+          }
+        };
+      }
+    });
+
+    // Calculate candidate fit analysis
+    analytics.candidateFitAnalysis = pipeline.candidates.map(candidate => {
+      const results = candidate.results || [];
+      const totalAssessments = pipeline.assessments.length;
+      const completedAssessments = results.length;
+      
+      // Calculate overall score
+      const scores = results.map(r => r.score).filter(s => s !== null);
+      const overallScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+      
+      // Calculate time efficiency
+      const totalTimeSpent = results.reduce((sum, r) => sum + (r.timeSpent || 0), 0);
+      const totalTimeLimit = pipeline.assessments.reduce((sum, a) => sum + (a.timeLimit * 60), 0);
+      const timeEfficiency = totalTimeLimit > 0 ? Math.round(Math.max(0, 100 - ((totalTimeSpent / totalTimeLimit) * 100))) : 100;
+      
+      // Calculate percentile
+      const allScores = pipeline.candidates
+        .flatMap(c => c.results)
+        .map(r => r.score)
+        .filter(s => s !== null);
+      const sortedScores = allScores.sort((a, b) => b - a);
+      const percentile = scores.length > 0 
+        ? Math.round(((sortedScores.indexOf(Math.max(...scores)) + 1) / sortedScores.length) * 100)
+        : 0;
+      
+      // Determine overall fit
+      let overallFit = 'fair';
+      if (overallScore >= 80 && percentile >= 75 && timeEfficiency >= 70) {
+        overallFit = 'excellent';
+      } else if (overallScore >= 60 && percentile >= 50 && timeEfficiency >= 50) {
+        overallFit = 'good';
+      } else if (overallScore >= 40 && percentile >= 25) {
+        overallFit = 'fair';
+      } else {
+        overallFit = 'poor';
+      }
+      
+      // Generate insights
+      const strengths = [];
+      const weaknesses = [];
+      const recommendations = [];
+      
+      if (overallScore >= 80) {
+        strengths.push('Strong performance across all assessments');
+        strengths.push('Demonstrates excellent problem-solving skills');
+      } else if (overallScore >= 60) {
+        strengths.push('Shows good understanding of key concepts');
+        strengths.push('Demonstrates solid foundational knowledge');
+      }
+      
+      if (overallScore < 60) {
+        weaknesses.push('Needs improvement in core areas');
+        weaknesses.push('May require additional training');
+      }
+      
+      if (timeEfficiency < 50) {
+        weaknesses.push('May struggle with time management');
+        recommendations.push('Consider time management training');
+      }
+      
+      if (completedAssessments < totalAssessments) {
+        weaknesses.push('Did not complete all assessments');
+        recommendations.push('Follow up on incomplete assessments');
+      }
+      
+      if (overallFit === 'excellent') {
+        recommendations.push('Strong candidate - recommend for next round');
+        recommendations.push('Consider fast-track to final interview');
+      } else if (overallFit === 'good') {
+        recommendations.push('Good candidate - proceed with standard process');
+      } else if (overallFit === 'fair') {
+        recommendations.push('Consider additional assessment or interview');
+      } else {
+        recommendations.push('May not be the right fit for this role');
+      }
+      
+      return {
+        candidateId: candidate.id,
+        candidateName: `${candidate.firstName} ${candidate.lastName}`,
+        candidateEmail: candidate.email,
+        status: candidate.status,
+        overallScore,
+        timeEfficiency,
+        percentile,
+        overallFit,
+        strengths,
+        weaknesses,
+        recommendations,
+        completedAssessments,
+        totalAssessments,
+        results: results.map(r => ({
+          assessmentType: r.assessment.type,
+          score: r.score,
+          timeSpent: r.timeSpent,
+          completedAt: r.completedAt
+        }))
+      };
+    });
+
+    // Update overall score distribution
+    const allScores = pipeline.candidates
+      .flatMap(c => c.results)
+      .map(r => r.score)
+      .filter(s => s !== null);
+    
+    analytics.scoreDistribution = {
+      excellent: allScores.filter(s => s >= 80).length,
+      good: allScores.filter(s => s >= 60 && s < 80).length,
+      fair: allScores.filter(s => s >= 40 && s < 60).length,
+      poor: allScores.filter(s => s < 40).length
+    };
+
+    res.json({ 
+      pipeline,
+      analytics
+    });
   } catch (error) {
     console.error('Error fetching pipeline:', error);
     res.status(500).json({ error: 'Failed to fetch pipeline' });

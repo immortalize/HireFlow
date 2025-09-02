@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { copyToClipboard } from '@/lib/clipboard'
+import PipelineAnalyticsDashboard from '@/components/PipelineAnalyticsDashboard'
 
 export default function PipelineDetailPage() {
   const params = useParams()
@@ -31,12 +32,15 @@ export default function PipelineDetailPage() {
   const [copiedToken, setCopiedToken] = useState(false)
 
   // Fetch pipeline details
-  const { data: pipeline, isLoading, error } = useQuery({
+  const { data: pipelineData, isLoading, error } = useQuery({
     queryKey: ['pipeline', pipelineId],
     queryFn: () => pipelinesAPI.getById(pipelineId),
-    select: (data) => data.data?.pipeline,
+    select: (data) => data.data,
     enabled: !!pipelineId
   })
+
+  const pipeline = pipelineData?.pipeline
+  const analytics = pipelineData?.analytics || {}
 
   const copyToClipboardHandler = async () => {
     if (!pipeline) return
@@ -65,6 +69,22 @@ export default function PipelineDetailPage() {
         return 'bg-gray-100 text-gray-800'
       default:
         return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return 'text-green-600'
+    if (score >= 60) return 'text-yellow-600'
+    return 'text-red-600'
+  }
+
+  const getFitBadgeColor = (fit: string) => {
+    switch (fit) {
+      case 'excellent': return 'bg-green-100 text-green-800'
+      case 'good': return 'bg-blue-100 text-blue-800'
+      case 'fair': return 'bg-yellow-100 text-yellow-800'
+      case 'poor': return 'bg-red-100 text-red-800'
+      default: return 'bg-gray-100 text-gray-800'
     }
   }
 
@@ -181,6 +201,11 @@ export default function PipelineDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Pipeline Info */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Analytics Dashboard */}
+            {analytics.totalCandidates > 0 && (
+              <PipelineAnalyticsDashboard analytics={analytics} pipeline={pipeline} />
+            )}
+
             {/* Overview */}
             <Card>
               <CardHeader>
@@ -300,6 +325,51 @@ export default function PipelineDetailPage() {
                             </div>
                           </div>
                         </div>
+                        
+                        {/* Fit Analysis */}
+                        {analytics.candidateFitAnalysis && analytics.candidateFitAnalysis.length > 0 && (
+                          (() => {
+                            const fitData = analytics.candidateFitAnalysis.find((c: any) => c.candidateId === candidate.id)
+                            if (fitData) {
+                              return (
+                                <div className="mt-3 pt-3 border-t">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <h5 className="text-sm font-medium text-gray-700">Fit Analysis</h5>
+                                    <div className="flex items-center space-x-2">
+                                      <Badge className={getFitBadgeColor(fitData.overallFit)}>
+                                        {fitData.overallFit.charAt(0).toUpperCase() + fitData.overallFit.slice(1)} Fit
+                                      </Badge>
+                                      <Badge className="bg-blue-100 text-blue-800">
+                                        Top {fitData.percentile}%
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                  <div className="grid grid-cols-3 gap-3 text-sm">
+                                    <div className="text-center">
+                                      <p className="text-gray-500">Score</p>
+                                      <p className={`font-medium ${getScoreColor(fitData.overallScore)}`}>
+                                        {fitData.overallScore}%
+                                      </p>
+                                    </div>
+                                    <div className="text-center">
+                                      <p className="text-gray-500">Time Eff.</p>
+                                      <p className="font-medium text-yellow-600">
+                                        {fitData.timeEfficiency}%
+                                      </p>
+                                    </div>
+                                    <div className="text-center">
+                                      <p className="text-gray-500">Progress</p>
+                                      <p className="font-medium text-gray-900">
+                                        {fitData.completedAssessments}/{fitData.totalAssessments}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )
+                            }
+                            return null
+                          })()
+                        )}
                         
                         {/* Results */}
                         {candidate.results && candidate.results.length > 0 && (
