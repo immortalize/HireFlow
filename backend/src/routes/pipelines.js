@@ -292,32 +292,6 @@ router.get('/:id', authenticateToken, requireRole(['EMPLOYER', 'HR_MANAGER', 'HI
           completionRate: totalQuestions > 0 ? Math.round(((correctAnswers + wrongAnswers) / totalQuestions) * 100) : 0
         };
       });
-        
-        // Calculate time per question
-        const timePerQuestion = totalQuestions > 0 ? Math.round((result.timeSpent || 0) / totalQuestions) : 0;
-        
-        // Determine performance level
-        let performanceLevel = 'poor';
-        if (result.score >= 80) performanceLevel = 'excellent';
-        else if (result.score >= 60) performanceLevel = 'good';
-        else if (result.score >= 40) performanceLevel = 'fair';
-        
-        return {
-          assessmentId: result.assessmentId,
-          assessmentType: result.assessment.type,
-          score: result.score,
-          timeSpent: result.timeSpent,
-          timePerQuestion,
-          completedAt: result.completedAt,
-          totalQuestions,
-          correctAnswers,
-          wrongAnswers,
-          emptyAnswers,
-          performanceLevel,
-          accuracy: totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0,
-          completionRate: totalQuestions > 0 ? Math.round(((correctAnswers + wrongAnswers) / totalQuestions) * 100) : 0
-        };
-      });
       
       return {
         candidateId: candidate.id,
