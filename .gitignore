@@ -3,6 +3,13 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
 
 # Environment variables
 .env
@@ -10,6 +17,7 @@ yarn-error.log*
 .env.development.local
 .env.test.local
 .env.production.local
+.env*.local
 
 # Build outputs
 dist/
@@ -84,6 +92,7 @@ logs
 # Database
 *.db
 *.sqlite
+*.sqlite3
 
 # Uploads
 uploads/
@@ -93,17 +102,22 @@ uploads/
 .idea/
 *.swp
 *.swo
+*~
 
 # OS
 .DS_Store
 Thumbs.db
+ehthumbs.db
+Desktop.ini
 
 # Prisma
-prisma/migrations/
+backend/prisma/migrations/*
+*.db-journal
 
 # Testing
 coverage/
 .nyc_output/
+.nyc_output
 
 # Production
 /build
@@ -111,3 +125,41 @@ coverage/
 # Misc
 *.tgz
 *.tar.gz
+
+# Turbo
+.turbo
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+
+# Local development
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Backup files
+*.bak
+*.backup
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
