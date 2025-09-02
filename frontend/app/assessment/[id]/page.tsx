@@ -48,6 +48,13 @@ interface Assessment {
   }
 }
 
+interface ProctoringSnapshot {
+  timestamp: string
+  imageData: string
+  userAgent: string
+  screenResolution: string
+}
+
 export default function AssessmentPage() {
   const params = useParams()
   const router = useRouter()
@@ -59,7 +66,7 @@ export default function AssessmentPage() {
   const [isStarted, setIsStarted] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
   const [isCompleted, setIsCompleted] = useState(false)
-  const [proctoringData, setProctoringData] = useState<any[]>([])
+  const [proctoringData, setProctoringData] = useState<ProctoringSnapshot[]>([])
   const [showWarning, setShowWarning] = useState(false)
   
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -75,9 +82,16 @@ export default function AssessmentPage() {
     enabled: !!assessmentId
   })
 
+interface AssessmentResults {
+  answers: Record<string, number>
+  timeSpent: number
+  proctoringData: ProctoringSnapshot[]
+  completedAt: string
+}
+
   // Submit assessment results
   const submitMutation = useMutation({
-    mutationFn: (data: any) => assessmentsAPI.submitResults(assessmentId, data),
+    mutationFn: (data: AssessmentResults) => assessmentsAPI.submitResults(assessmentId, data),
     onSuccess: () => {
       toast.success('Assessment submitted successfully!')
       setIsCompleted(true)
@@ -172,7 +186,8 @@ export default function AssessmentPage() {
         setProctoringData(prev => [...prev, {
           timestamp: new Date().toISOString(),
           imageData,
-          questionIndex: currentQuestionIndex
+          userAgent: navigator.userAgent,
+          screenResolution: `${screen.width}x${screen.height}`
         }])
       }
     }
@@ -186,7 +201,10 @@ export default function AssessmentPage() {
 
   const handlePause = () => {
     setIsPaused(true)
-    toast.info('Assessment paused')
+    toast('Assessment paused', {
+      icon: '⏸️',
+      duration: 3000
+    })
   }
 
   const handleResume = () => {
@@ -439,7 +457,7 @@ export default function AssessmentPage() {
                 </div>
 
                 <div className="space-y-3">
-                  {currentQuestion?.options?.map((option, index) => (
+                  {currentQuestion?.options?.map((option: string, index: number) => (
                     <button
                       key={index}
                       onClick={() => handleAnswerSelect(currentQuestion.id, index)}

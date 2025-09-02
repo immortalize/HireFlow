@@ -24,6 +24,33 @@ import {
 import toast from 'react-hot-toast'
 import { copyToClipboard } from '@/lib/clipboard'
 
+interface Assessment {
+  id: string
+  type: string
+  timeLimit: number
+}
+
+interface Candidate {
+  id: string
+  firstName: string
+  lastName: string
+  status: string
+}
+
+interface Pipeline {
+  id: string
+  name: string
+  description?: string
+  token: string
+  expiresAt?: string
+  createdAt: string
+  assessments: Assessment[]
+  candidates: Candidate[]
+  _count?: {
+    candidates: number
+  }
+}
+
 export default function PipelinesPage() {
   const router = useRouter()
   const [copiedToken, setCopiedToken] = useState<string | null>(null)
@@ -85,7 +112,7 @@ export default function PipelinesPage() {
     })
   }
 
-  const isExpired = (expiresAt: string | null) => {
+  const isExpired = (expiresAt: string | null | undefined) => {
     if (!expiresAt) return false
     return new Date(expiresAt) < new Date()
   }
@@ -153,7 +180,7 @@ export default function PipelinesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {pipelines.map((pipeline) => (
+            {pipelines.map((pipeline: Pipeline) => (
               <Card key={pipeline.id} className="hover:shadow-md transition-shadow">
                 <CardHeader>
                   <div className="flex items-start justify-between">
@@ -185,7 +212,7 @@ export default function PipelinesPage() {
                   <div>
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Assessments</h4>
                     <div className="space-y-1">
-                      {pipeline.assessments.slice(0, 3).map((assessment) => {
+                      {pipeline.assessments.slice(0, 3).map((assessment: Assessment) => {
                         const Icon = getAssessmentTypeIcon(assessment.type)
                         return (
                           <div key={assessment.id} className="flex items-center space-x-2 text-sm">
@@ -217,7 +244,7 @@ export default function PipelinesPage() {
                     <div>
                       <p className="text-gray-500">Completed</p>
                       <p className="font-medium text-gray-900">
-                        {pipeline.candidates?.filter(c => c.status === 'COMPLETED').length || 0}
+                        {pipeline.candidates?.filter((c: Candidate) => c.status === 'COMPLETED').length || 0}
                       </p>
                     </div>
                   </div>
@@ -227,7 +254,7 @@ export default function PipelinesPage() {
                     <div>
                       <h4 className="text-sm font-medium text-gray-700 mb-2">Recent Candidates</h4>
                       <div className="space-y-1">
-                        {pipeline.candidates.slice(0, 3).map((candidate) => (
+                        {pipeline.candidates.slice(0, 3).map((candidate: Candidate) => (
                           <div key={candidate.id} className="flex items-center justify-between text-sm">
                             <span className="text-gray-600">
                               {candidate.firstName} {candidate.lastName}

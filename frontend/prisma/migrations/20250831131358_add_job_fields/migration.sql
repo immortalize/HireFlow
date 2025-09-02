@@ -1,0 +1,8 @@
+-- CreateEnum
+CREATE TYPE "JobType" AS ENUM ('FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP');
+
+-- AlterTable
+ALTER TABLE "jobs" ADD COLUMN     "benefits" TEXT,
+ADD COLUMN     "type" "JobType" NOT NULL DEFAULT 'FULL_TIME',
+ALTER COLUMN "requirements" DROP NOT NULL,
+ALTER COLUMN "requirements" SET DATA TYPE TEXT;

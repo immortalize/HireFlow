@@ -39,6 +39,17 @@ interface QuestionStats {
   total: number
 }
 
+interface Categories {
+  COGNITIVE: Record<string, string>
+  ENGLISH: Record<string, string>
+  SITUATIONAL_JUDGMENT: Record<string, string>
+  FIT_CHECK: Record<string, string>
+}
+
+interface Difficulties {
+  [key: number]: string
+}
+
 export default function QuestionBanksPage() {
   const [selectedType, setSelectedType] = useState<string>('COGNITIVE')
   const [selectedDifficulty, setSelectedDifficulty] = useState<number | null>(null)
@@ -65,14 +76,14 @@ export default function QuestionBanksPage() {
   const { data: categories } = useQuery({
     queryKey: ['question-banks-categories'],
     queryFn: () => questionBanksAPI.getCategories(),
-    select: (data) => data.data?.categories
+    select: (data) => data.data?.categories as Categories
   })
 
   // Fetch difficulties
   const { data: difficulties } = useQuery({
     queryKey: ['question-banks-difficulties'],
     queryFn: () => questionBanksAPI.getDifficulties(),
-    select: (data) => data.data?.difficulties
+    select: (data) => data.data?.difficulties as Difficulties
   })
 
   const getTypeIcon = (type: string) => {
@@ -356,7 +367,7 @@ export default function QuestionBanksPage() {
                              <div className="flex items-center space-x-2">
                                {question.category && (
                                  <Badge className="text-xs">
-                                   {(categories?.[selectedType] as Record<string, string>)?.[question.category] || question.category}
+                                   {categories?.[selectedType as keyof Categories]?.[question.category] || question.category}
                                  </Badge>
                                )}
                                {question.difficulty && (
@@ -396,10 +407,10 @@ export default function QuestionBanksPage() {
                      ) : (
                        // Handle categorized questions (like cognitive)
                        Object.entries(questions?.questions || {}).map(([category, categoryQuestions]) => (
-                         <div key={category}>
-                                                        <h3 className="font-medium text-gray-900 mb-3">
-                               {(categories?.[selectedType] as Record<string, string>)?.[category] || category}
-                             </h3>
+                                                  <div key={category}>
+                           <h3 className="font-medium text-gray-900 mb-3">
+                             {categories?.[selectedType as keyof Categories]?.[category] || category}
+                           </h3>
                            <div className="space-y-3">
                              {(categoryQuestions as Question[]).map((question: Question, index: number) => (
                                <div key={question.id || index} className="border rounded-lg p-4">

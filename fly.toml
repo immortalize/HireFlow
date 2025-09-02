@@ -1,0 +1,46 @@
+# fly.toml for HireFlow Application
+# Complete configuration for deploying HireFlow to Fly.io
+
+app = "hireflow"
+#primary_region = "iad" # Washington DC - change to your preferred region
+primary_region = "fra"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "3000"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+[[http_service.checks]]
+  grace_period = "10s"
+  interval = "30s"
+  method = "GET"
+  timeout = "5s"
+  path = "/"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 2048
+
+# Database configuration
+# You'll need to set up a PostgreSQL database separately
+# Options: Fly Postgres, Supabase, PlanetScale, or any external PostgreSQL service
+
+# Environment variables to set via fly secrets:
+# DATABASE_URL - Your PostgreSQL connection string
+# JWT_SECRET - Secret key for JWT tokens
+# CORS_ORIGIN - Allowed CORS origins (your frontend URL)
+# NEXT_PUBLIC_API_URL - Backend API URL for frontend
+
+[processes]
+  app = "sh /app/start.sh"

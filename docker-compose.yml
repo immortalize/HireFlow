@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: hireflow-postgres
+    environment:
+      POSTGRES_DB: hireflow
+      POSTGRES_USER: hireflow_user
+      POSTGRES_PASSWORD: hireflow_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/prisma/migrations:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - hireflow-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hireflow_user -d hireflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: hireflow-backend
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://hireflow_user:hireflow_password@postgres:5432/hireflow
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      PORT: 5000
+      CORS_ORIGIN: http://localhost:3000
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - hireflow-network
+    restart: unless-stopped
+
+  # Frontend Next.js App
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: hireflow-frontend
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: http://localhost:5000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - hireflow-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  hireflow-network:
+    driver: bridge

@@ -20,6 +20,31 @@ import {
   User
 } from 'lucide-react'
 
+interface Question {
+  questionNumber: number
+  question: string
+  options: string[]
+  correctAnswer: number
+  candidateAnswer: number | null
+  isCorrect: boolean
+  isAnswered: boolean
+  explanation?: string
+}
+
+interface AssessmentResult {
+  id: string
+  assessmentType: string
+  score: number
+  timeSpent: number
+  completedAt: string
+  questions: Question[]
+  candidate: {
+    firstName: string
+    lastName: string
+    email: string
+  }
+}
+
 export default function DetailedAssessmentResultPage() {
   const params = useParams()
   const router = useRouter()
@@ -240,7 +265,7 @@ export default function DetailedAssessmentResultPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  {result.questions.map((question, index) => (
+                  {result.questions.map((question: Question, index: number) => (
                     <div key={index} className="border rounded-lg p-6">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center space-x-2">
@@ -272,7 +297,7 @@ export default function DetailedAssessmentResultPage() {
                         </h3>
                         
                         <div className="space-y-2">
-                          {question.options.map((option, optionIndex) => (
+                          {question.options.map((option: string, optionIndex: number) => (
                             <div 
                               key={optionIndex} 
                               className={`p-3 rounded-lg border ${
@@ -305,7 +330,7 @@ export default function DetailedAssessmentResultPage() {
                         <div>
                           <span className="text-gray-500">Candidate's Answer:</span>
                           <div className="font-medium text-gray-900 mt-1">
-                            {question.candidateAnswer !== null && question.candidateAnswer !== undefined && question.candidateAnswer !== ''
+                            {question.candidateAnswer !== null && question.candidateAnswer !== undefined
                               ? `${String.fromCharCode(65 + question.candidateAnswer)}. ${question.options[question.candidateAnswer]}`
                               : 'No answer provided'
                             }

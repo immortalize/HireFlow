@@ -31,7 +31,13 @@ interface Candidate {
   status: string
   startedAt: string
   completedAt?: string
-  results: any[]
+  results: AssessmentResult[]
+}
+
+interface AssessmentResult {
+  assessmentId: string
+  score: number
+  completedAt: string
 }
 
 interface Assessment {
@@ -40,7 +46,20 @@ interface Assessment {
   order: number
   timeLimit: number
   isRequired: boolean
-  questionsBank: any
+  questionsBank: QuestionBank
+}
+
+interface QuestionBank {
+  id: string
+  name: string
+  questions: Question[]
+}
+
+interface Question {
+  id: string
+  text: string
+  type: string
+  options: string[]
 }
 
 interface Pipeline {
@@ -54,6 +73,17 @@ interface Pipeline {
     logo?: string
   }
   assessments: Assessment[]
+}
+
+interface StartPipelineData {
+  firstName: string
+  lastName: string
+  email: string
+}
+
+interface SubmitAssessmentData {
+  answers: number[]
+  timeSpent: number
 }
 
 export default function PipelinePage() {
@@ -78,7 +108,7 @@ export default function PipelinePage() {
 
   // Start pipeline mutation
   const startMutation = useMutation({
-    mutationFn: (data: any) => pipelinesAPI.startPipeline(token, data),
+    mutationFn: (data: StartPipelineData) => pipelinesAPI.startPipeline(token, data),
     onSuccess: (response) => {
       setCandidate(response.data.candidate)
       setCurrentStep('assessment')
@@ -95,7 +125,7 @@ export default function PipelinePage() {
 
   // Submit assessment mutation
   const submitMutation = useMutation({
-    mutationFn: (data: any) => 
+    mutationFn: (data: SubmitAssessmentData) => 
       pipelinesAPI.submitAssessment(token, currentAssessment?.id || '', data),
     onSuccess: (response) => {
       const isCompleted = response.data.result.isCompleted
@@ -269,7 +299,7 @@ export default function PipelinePage() {
                 </p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                  {pipeline.assessments.map((assessment, index) => {
+                  {pipeline.assessments.map((assessment: Assessment, index: number) => {
                     const Icon = typeInfo.icon
                     return (
                       <div key={assessment.id} className="border rounded-lg p-4">

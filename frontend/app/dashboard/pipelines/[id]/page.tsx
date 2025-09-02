@@ -25,6 +25,68 @@ import toast from 'react-hot-toast'
 import { copyToClipboard } from '@/lib/clipboard'
 import PipelineAnalyticsDashboard from '@/components/PipelineAnalyticsDashboard'
 
+interface Assessment {
+  id: string
+  type: string
+  timeLimit: number
+  isRequired: boolean
+  order: number
+}
+
+interface AssessmentResult {
+  id: string
+  assessment: {
+    type: string
+  }
+  score: number | null
+  timeSpent: number
+}
+
+interface Candidate {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  status: string
+  startedAt: string
+  completedAt?: string
+  results: AssessmentResult[]
+}
+
+interface Pipeline {
+  id: string
+  name: string
+  token: string
+  createdBy?: {
+    firstName: string
+    lastName: string
+  }
+  assessments: Assessment[]
+  candidates: Candidate[]
+}
+
+interface DetailedResult {
+  assessmentType: string
+  score: number
+  timeSpent: number
+  correctAnswers: number
+  wrongAnswers: number
+  emptyAnswers: number
+  accuracy: number
+  resultId: string
+}
+
+interface CandidateFitAnalysis {
+  candidateId: string
+  overallFit: string
+  percentile: number
+  detailedResults?: DetailedResult[]
+}
+
+interface Analytics {
+  candidateFitAnalysis?: CandidateFitAnalysis[]
+}
+
 export default function PipelineDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -257,7 +319,7 @@ export default function PipelineDetailPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {pipeline.assessments.map((assessment) => {
+                  {pipeline.assessments.map((assessment: Assessment) => {
                     const typeInfo = getAssessmentTypeInfo(assessment.type)
                     const Icon = typeInfo.icon
                     
@@ -303,7 +365,7 @@ export default function PipelineDetailPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {pipeline.candidates.map((candidate) => (
+                    {pipeline.candidates.map((candidate: Candidate) => (
                       <div key={candidate.id} className="border rounded-lg p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
@@ -335,7 +397,7 @@ export default function PipelineDetailPage() {
                         {/* Fit Analysis */}
                         {analytics.candidateFitAnalysis && analytics.candidateFitAnalysis.length > 0 && (
                           (() => {
-                            const fitData = analytics.candidateFitAnalysis.find((c: any) => c.candidateId === candidate.id)
+                            const fitData = analytics.candidateFitAnalysis.find((c: CandidateFitAnalysis) => c.candidateId === candidate.id)
                             if (fitData) {
                               return (
                                 <div className="mt-3 pt-3 border-t">
@@ -382,7 +444,7 @@ export default function PipelineDetailPage() {
                           <div className="mt-4 pt-4 border-t">
                             <h5 className="text-sm font-medium text-gray-700 mb-2">Assessment Results</h5>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              {candidate.results.map((result) => (
+                              {candidate.results.map((result: AssessmentResult) => (
                                 <div key={result.id} className="flex items-center justify-between text-sm">
                                   <span className="text-gray-600">
                                     {getAssessmentTypeInfo(result.assessment.type).name}
@@ -414,13 +476,13 @@ export default function PipelineDetailPage() {
                         {/* Detailed Results from Analytics */}
                         {analytics.candidateFitAnalysis && analytics.candidateFitAnalysis.length > 0 && (
                           (() => {
-                            const fitData = analytics.candidateFitAnalysis.find((c: any) => c.candidateId === candidate.id)
+                            const fitData = analytics.candidateFitAnalysis.find((c: CandidateFitAnalysis) => c.candidateId === candidate.id)
                             if (fitData && fitData.detailedResults && fitData.detailedResults.length > 0) {
                               return (
                                 <div className="mt-3 pt-3 border-t">
                                   <h5 className="text-sm font-medium text-gray-700 mb-2">Detailed Results</h5>
                                   <div className="space-y-2">
-                                    {fitData.detailedResults.map((result: any, index: number) => (
+                                    {fitData.detailedResults.map((result: DetailedResult, index: number) => (
                                       <div key={index} className="bg-gray-50 rounded p-2 text-sm">
                                         <div className="flex items-center justify-between mb-1">
                                           <span className="font-medium text-gray-700">
@@ -497,7 +559,7 @@ export default function PipelineDetailPage() {
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-green-600">
-                      {pipeline.candidates.filter(c => c.status === 'COMPLETED').length}
+                      {pipeline.candidates.filter((c: Candidate) => c.status === 'COMPLETED').length}
                     </div>
                     <div className="text-sm text-gray-600">Completed</div>
                   </div>
@@ -506,7 +568,7 @@ export default function PipelineDetailPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="text-center">
                     <div className="text-2xl font-bold text-yellow-600">
-                      {pipeline.candidates.filter(c => c.status === 'IN_PROGRESS').length}
+                      {pipeline.candidates.filter((c: Candidate) => c.status === 'IN_PROGRESS').length}
                     </div>
                     <div className="text-sm text-gray-600">In Progress</div>
                   </div>
