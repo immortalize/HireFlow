@@ -265,7 +265,10 @@ export default function QuestionBanksPage() {
                             {type.replace('_', ' ')}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {stats?.[type.toLowerCase()] || 0} questions
+                            {type === 'COGNITIVE' 
+                              ? (stats?.cognitive?.total || 0)
+                              : (stats?.[type.toLowerCase()] || 0)
+                            } questions
                           </p>
                         </div>
                       </div>
